@@ -69,7 +69,16 @@ int main() {
 
 // STRING RELATED METHODS
 
-
+int intOrString(const char *data) {
+    int i = 0;
+    while(data[i] != '\0') {
+        if (!('0' <= data[i] && data[i] <= '9')) {
+            return 1;
+        }
+        i++;
+    }
+    return 0;
+}
 
 char **parseCommand(char *commandParts[], char *command) {
     const char separator[SEPARATOR_SIZE] = ",";
@@ -77,7 +86,6 @@ char **parseCommand(char *commandParts[], char *command) {
     commandParts[0] = strtok(command, separator);
     int i = 0;
     while( commandParts[i] != nullptr) {
-        cout << commandParts[i] << endl;
         i++;
         commandParts[i] = strtok(nullptr, separator);
     }

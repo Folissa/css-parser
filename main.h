@@ -19,7 +19,9 @@ typedef struct block block;
 
 typedef struct section section;
 
-typedef struct node selector, attribute;
+typedef struct selector selector;
+
+typedef struct attribute attribute;
 
 typedef struct block {
     section *sectionArray[SECTIONS_PER_BLOCK] = {};
@@ -35,13 +37,23 @@ typedef struct section {
     section *next = nullptr;
 } section;
 
-typedef struct node {
-    char *data[DATA_SIZE] = {};
-    node *prev = nullptr;
-    node *next = nullptr;
-} selector, attribute;
+typedef struct selector {
+    char *selectorName[INPUT_SIZE] = {};
+    selector *prev = nullptr;
+    selector *next = nullptr;
+} selector;
+
+typedef struct attribute {
+    char *attributeName[INPUT_SIZE] = {};
+    char *value[INPUT_SIZE] = {};
+    attribute *prev = nullptr;
+    attribute *next = nullptr;
+} attribute;
 
 // STRING RELATED METHODS
+
+//
+int intOrString(const char *data);
 
 //
 char **parseCommand(char *commandParts[], char *command);
