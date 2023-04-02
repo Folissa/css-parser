@@ -189,67 +189,74 @@ void dataParser(char *data) {
         }
         // Logic for a section.
         else {
-            int selectorsCount = countSelectors(data, currentIndex);
-            for (int i = 0; i < selectorsCount; i++) {
-                char selectorName[INPUT_SIZE];
-                int j = 0;
-                while (data[currentIndex] != ',' && data[currentIndex] != '{') {
-                    selectorName[j] = data[currentIndex];
-                    currentIndex++;
-                    j++;
-                }
-                selectorName[j] = '\0';
-                char selectorNameTrimmed[INPUT_SIZE];
-                strcpy(selectorNameTrimmed, trimSpaces(selectorName));
-                // Add selector to the list.
-                // TODO: Add selector to the list
-                cout << selectorNameTrimmed << endl;
-                // Skip ',' or '{'.
-                currentIndex++;
-            }
-
-            int attributesCount = countAttributes(data, currentIndex);
-            for (int i = 0; i < attributesCount; i++) {
-                char attributeName[INPUT_SIZE];
-                int j = 0;
-                while (data[currentIndex] != ':') {
-                    attributeName[j] = data[currentIndex];
-                    currentIndex++;
-                    j++;
-                }
-                attributeName[j] = '\0';
-                char attributeNameTrimmed[INPUT_SIZE];
-                strcpy(attributeNameTrimmed, trimSpaces(attributeName));
-                // Add attribute name to the list.
-                // TODO: Add attribute name to the list
-                cout << attributeNameTrimmed << endl;
-                // Skip ':'.
-                currentIndex++;
-                char attributeValue[INPUT_SIZE];
-                int k = 0;
-                while (data[currentIndex] != ';' && data[currentIndex] != '}') {
-                    attributeValue[k] = data[currentIndex];
-                    currentIndex++;
-                    k++;
-                }
-                attributeValue[k] = '\0';
-                char attributeValueTrimmed[INPUT_SIZE];
-                strcpy(attributeValueTrimmed, trimSpaces(attributeValue));
-                // Add attribute value to the list.
-                // TODO: Add attribute value to the list
-                cout << attributeValueTrimmed << endl;
-                // Skip ';'.
-                if (i < attributesCount - 1)
-                    currentIndex += 1;
-                // Skip '}' and anything before.
-                else {
-                    while(data[currentIndex] != '}')
-                        currentIndex++;
-                    currentIndex++;
-                }
-            }
+            parseSelectors(data, &currentIndex);
+            parseAttributes(data, &currentIndex);
         }
         currentIndex++;
+    }
+}
+
+void parseSelectors(char *data, int *currentIndex) {
+    int selectorsCount = countSelectors(data, *currentIndex);
+    for (int i = 0; i < selectorsCount; i++) {
+        char selectorName[INPUT_SIZE];
+        int j = 0;
+        while (data[*currentIndex] != ',' && data[*currentIndex] != '{') {
+            selectorName[j] = data[*currentIndex];
+            (*currentIndex)++;
+            j++;
+        }
+        selectorName[j] = '\0';
+        char selectorNameTrimmed[INPUT_SIZE];
+        strcpy(selectorNameTrimmed, trimSpaces(selectorName));
+        // Add selector to the list.
+        // TODO: Add selector to the list
+        cout << selectorNameTrimmed << endl;
+        // Skip ',' or '{'.
+        (*currentIndex)++;
+    }
+}
+
+void parseAttributes(char *data, int *currentIndex) {
+    int attributesCount = countAttributes(data, *currentIndex);
+    for (int i = 0; i < attributesCount; i++) {
+        char attributeName[INPUT_SIZE];
+        int j = 0;
+        while (data[*currentIndex] != ':') {
+            attributeName[j] = data[*currentIndex];
+            (*currentIndex)++;
+            j++;
+        }
+        attributeName[j] = '\0';
+        char attributeNameTrimmed[INPUT_SIZE];
+        strcpy(attributeNameTrimmed, trimSpaces(attributeName));
+        // Add attribute name to the list.
+        // TODO: Add attribute name to the list
+        cout << attributeNameTrimmed << endl;
+        // Skip ':'.
+        (*currentIndex)++;
+        char attributeValue[INPUT_SIZE];
+        int k = 0;
+        while (data[*currentIndex] != ';' && data[*currentIndex] != '}') {
+            attributeValue[k] = data[*currentIndex];
+            (*currentIndex)++;
+            k++;
+        }
+        attributeValue[k] = '\0';
+        char attributeValueTrimmed[INPUT_SIZE];
+        strcpy(attributeValueTrimmed, trimSpaces(attributeValue));
+        // Add attribute value to the list.
+        // TODO: Add attribute value to the list
+        cout << attributeValueTrimmed << endl;
+        // Skip ';'.
+        if (i < attributesCount - 1)
+            (*currentIndex)++;
+        // Skip '}' and anything before.
+        else {
+            while(data[*currentIndex] != '}')
+                (*currentIndex)++;
+            (*currentIndex)++;
+        }
     }
 }
 

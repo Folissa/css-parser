@@ -76,6 +76,12 @@ void printString(char *data);
 // DATA PARSING RELATED METHODS
 
 //
+void parseSelectors(char *data, int *currentIndex);
+
+//
+void parseAttributes(char *data, int *currentIndex);
+
+//
 char **parseCommand(char *commandParts[], char *command);
 
 //
