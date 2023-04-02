@@ -27,7 +27,8 @@ int main() {
         if (!appendingAllowed) {
             if (parseData) {
                 // Data parsing.
-                printString(data);
+//                printString(data);
+                dataParser(data);
                 parseData = 0;
 
                 // After we parse all data into according data structures we can erase the data buffer.
@@ -41,8 +42,6 @@ int main() {
                 // Parse the command.
                 char *commandParts[COMMAND_SIZE];
                 parseCommand(commandParts, input);
-//                int partsTypes[COMMAND_SIZE];
-//                recognizePartsTypes(commandParts, partsTypes);
 
                 // Then invoke it.
                 if (strcmp(commandParts[SECOND_PART], "S") == 0) {
@@ -88,11 +87,7 @@ int main() {
 
     // Initialize data blocks and sections.
 //    block *blocks;
-//    blocks = (block *) malloc(sizeof(block));
 //    section *sections;
-//    sections = (section *) malloc(sizeof(section));
-//    blocks->sectionArray[0] = sections;
-//    blocks->takenSections++;
 
     // Free the allocated memory.
 //    free(sections);
@@ -103,13 +98,25 @@ int main() {
 
 // STRING RELATED METHODS
 
-//void recognizePartsTypes(char *commandParts[], int partsTypes[]) {
-//    int i = 0;
-//    while (i < COMMAND_SIZE) {
-//        partsTypes[i] = intOrString(commandParts[i]);
-//        i++;
-//    }
-//}
+char *trimSpaces(char *data) {
+    // https://stackoverflow.com/questions/122616/how-do-i-trim-leading-trailing-whitespace-in-a-standard-way
+
+    // Trim leading space.
+    // Is a char, that *data points to, a space? If yes, move the pointer.
+    while (isspace(*data))
+        data++;
+
+    // Trim trailing space.
+    char *end;
+    end = data + strlen(data) - 1;
+    while (end > data && isspace(*end))
+        end--;
+
+    // Write new null terminator character.
+    end[1] = '\0';
+
+    return data;
+}
 
 int intOrString(const char *data) {
     int i = 0;
@@ -121,21 +128,9 @@ int intOrString(const char *data) {
     return 0;
 }
 
-char **parseCommand(char *commandParts[], char *command) {
-    const char separator[SEPARATOR_SIZE] = ",";
-    // https://www.tutorialspoint.com/c_standard_library/c_function_strtok.htm
-    commandParts[0] = strtok(command, separator);
-    int i = 0;
-    while( commandParts[i] != nullptr) {
-        i++;
-        commandParts[i] = strtok(nullptr, separator);
-    }
-    return commandParts;
-}
-
-void freeString(char *data, int *currentIndex) {
-    memset(data, '\0', *currentIndex);
-    *currentIndex = 0;
+void freeString(char *data, int *length) {
+    memset(data, '\0', *length);
+    *length = 0;
 }
 
 void appendToBuffer(const char *input, char *data, int *sizeOfData, int *currentIndex) {
@@ -160,6 +155,18 @@ void printString(char *data) {
 
 // DATA PARSING RELATED METHODS
 
+char **parseCommand(char *commandParts[], char *command) {
+    const char separator[SEPARATOR_SIZE] = ",";
+    // https://www.tutorialspoint.com/c_standard_library/c_function_strtok.htm
+    commandParts[0] = strtok(command, separator);
+    int i = 0;
+    while( commandParts[i] != nullptr) {
+        i++;
+        commandParts[i] = strtok(nullptr, separator);
+    }
+    return commandParts;
+}
+
 int isGlobalAttribute(const char *data, int currentIndex) {
     while (data[currentIndex] != '{' && data[currentIndex] != ';') {
         currentIndex++;
@@ -171,20 +178,102 @@ int isGlobalAttribute(const char *data, int currentIndex) {
     return 0;
 }
 
-//void parseData(block *blocks, section *sections, char *data, int size) {
-//    int currentIndex = 0;
-//    if (!isGlobalAttribute(currentIndex, data)) {
-//        if (getLast<block>(blocks) == nullptr) {
-//
-//        }
-//        else if (getLast<block>(blocks)->takenSections <= SECTIONS_PER_BLOCK) {
-//
-//        }
-//    }
-//    else {
-//
-//    }
-//}
+void dataParser(char *data) {
+    int currentIndex = 0;
+    while (data[currentIndex] != '\0') {
+        int globalAttribute = isGlobalAttribute(data, currentIndex);
+        // Logic for global attribute.
+        if (globalAttribute) {
+            currentIndex++;
+            continue;
+        }
+        // Logic for a section.
+        else {
+            int selectorsCount = countSelectors(data, currentIndex);
+            for (int i = 0; i < selectorsCount; i++) {
+                char selectorName[INPUT_SIZE];
+                int j = 0;
+                while (data[currentIndex] != ',' && data[currentIndex] != '{') {
+                    selectorName[j] = data[currentIndex];
+                    currentIndex++;
+                    j++;
+                }
+                selectorName[j] = '\0';
+                char selectorNameTrimmed[INPUT_SIZE];
+                strcpy(selectorNameTrimmed, trimSpaces(selectorName));
+                // Add selector to the list.
+                // TODO: Add selector to the list
+                cout << selectorNameTrimmed << endl;
+                // Skip ',' or '{'.
+                currentIndex++;
+            }
+
+            int attributesCount = countAttributes(data, currentIndex);
+            for (int i = 0; i < attributesCount; i++) {
+                char attributeName[INPUT_SIZE];
+                int j = 0;
+                while (data[currentIndex] != ':') {
+                    attributeName[j] = data[currentIndex];
+                    currentIndex++;
+                    j++;
+                }
+                attributeName[j] = '\0';
+                char attributeNameTrimmed[INPUT_SIZE];
+                strcpy(attributeNameTrimmed, trimSpaces(attributeName));
+                // Add attribute name to the list.
+                // TODO: Add attribute name to the list
+                cout << attributeNameTrimmed << endl;
+                // Skip ':'.
+                currentIndex++;
+                char attributeValue[INPUT_SIZE];
+                int k = 0;
+                while (data[currentIndex] != ';' && data[currentIndex] != '}') {
+                    attributeValue[k] = data[currentIndex];
+                    currentIndex++;
+                    k++;
+                }
+                attributeValue[k] = '\0';
+                char attributeValueTrimmed[INPUT_SIZE];
+                strcpy(attributeValueTrimmed, trimSpaces(attributeValue));
+                // Add attribute value to the list.
+                // TODO: Add attribute value to the list
+                cout << attributeValueTrimmed << endl;
+                // Skip ';'.
+                if (i < attributesCount - 1)
+                    currentIndex += 1;
+                // Skip '}' and anything before.
+                else {
+                    while(data[currentIndex] != '}')
+                        currentIndex++;
+                    currentIndex++;
+                }
+            }
+        }
+        currentIndex++;
+    }
+}
+
+int countSelectors(const char *data, int currentIndex) {
+    int selectorsCount = 1;
+    while(data[currentIndex] != '{') {
+        if (data[currentIndex] == ',')
+            selectorsCount++;
+        currentIndex++;
+    }
+    return selectorsCount;
+}
+
+
+int countAttributes(const char *data, int currentIndex) {
+    int attributesCount = 0;
+    while(data[currentIndex] != '}') {
+        if (data[currentIndex] == ':')
+            attributesCount++;
+        currentIndex++;
+    }
+    return attributesCount;
+}
+
 
 // LIST RELATED METHODS
 

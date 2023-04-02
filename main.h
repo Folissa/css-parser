@@ -44,14 +44,14 @@ typedef struct section {
 } section;
 
 typedef struct selector {
-    char *selectorName[INPUT_SIZE] = {};
+    char selectorName[INPUT_SIZE] = {};
     selector *prev = nullptr;
     selector *next = nullptr;
 } selector;
 
 typedef struct attribute {
-    char *attributeName[INPUT_SIZE] = {};
-    char *value[INPUT_SIZE] = {};
+    char attributeName[INPUT_SIZE] = {};
+    char value[INPUT_SIZE] = {};
     attribute *prev = nullptr;
     attribute *next = nullptr;
 } attribute;
@@ -59,16 +59,13 @@ typedef struct attribute {
 // STRING RELATED METHODS
 
 //
-void recognizePartsTypes(char *commandParts[], int partsTypes[]);
+char *trimSpaces(char *data);
 
 //
 int intOrString(const char *data);
 
 //
-char **parseCommand(char *commandParts[], char *command);
-
-//
-void freeString(char *data, int *currentIndex);
+void freeString(char *data, int *length);
 
 //
 void appendToBuffer(const char *input, char *data, int *sizeOfData, int *currentIndex);
@@ -79,10 +76,19 @@ void printString(char *data);
 // DATA PARSING RELATED METHODS
 
 //
+char **parseCommand(char *commandParts[], char *command);
+
+//
 int isGlobalAttribute(const char *data, int currentIndex);
 
 //
-//void parseData(block *blocks, section *sections, char *data, int size);
+void dataParser(char *data);
+
+//
+int countSelectors(const char *data, int currentIndex);
+
+//
+int countAttributes(const char *data, int currentIndex);
 
 // LIST RELATED METHODS
 
