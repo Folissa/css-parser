@@ -15,6 +15,12 @@ enum type {
     STRING
 };
 
+enum part {
+    FIRST_PART,
+    SECOND_PART,
+    THIRD_PART
+};
+
 typedef struct block block;
 
 typedef struct section section;
@@ -51,6 +57,9 @@ typedef struct attribute {
 } attribute;
 
 // STRING RELATED METHODS
+
+//
+void recognizePartsTypes(char *commandParts[], int partsTypes[]);
 
 //
 int intOrString(const char *data);

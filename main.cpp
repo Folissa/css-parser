@@ -12,8 +12,7 @@ int main() {
 
     // Inputs until a whitespace.
     while (cin >> input) {
-
-        // Check if we invoke the commands ot input the data to the buffer.
+        // Check if we invoke the commands or input the data to the buffer.
         if (strcmp(input, "????") == 0) {
             appendingAllowed = 0;
             parseData = 1;
@@ -30,6 +29,7 @@ int main() {
                 // Data parsing.
                 printString(data);
                 parseData = 0;
+
                 // After we parse all data into according data structures we can erase the data buffer.
                 freeString(data, &currentIndex);
             }
@@ -41,10 +41,44 @@ int main() {
                 // Parse the command.
                 char *commandParts[COMMAND_SIZE];
                 parseCommand(commandParts, input);
+//                int partsTypes[COMMAND_SIZE];
+//                recognizePartsTypes(commandParts, partsTypes);
+
                 // Then invoke it.
+                if (strcmp(commandParts[SECOND_PART], "S") == 0) {
+                    if (intOrString(commandParts[FIRST_PART]) == INT && strcmp(commandParts[THIRD_PART], "?") == 0) {
+                        continue;
+                    }
+                    else if (intOrString(commandParts[FIRST_PART]) == INT && intOrString(commandParts[THIRD_PART]) == INT) {
+                        continue;
+                    }
+                    else if (intOrString(commandParts[FIRST_PART]) == STRING && strcmp(commandParts[THIRD_PART], "?") == 0) {
+                        continue;
+                    }
+                }
+                else if (strcmp(commandParts[SECOND_PART], "A") == 0) {
+                    if (intOrString(commandParts[FIRST_PART]) == INT && strcmp(commandParts[THIRD_PART], "?") == 0) {
+                        continue;
+                    }
+                    else if (intOrString(commandParts[FIRST_PART]) == INT && intOrString(commandParts[THIRD_PART]) == STRING) {
+                        continue;
+                    }
+                    else if (intOrString(commandParts[FIRST_PART]) == STRING && strcmp(commandParts[THIRD_PART], "?") == 0) {
+                        continue;
+                    }
+                }
+                else if (strcmp(commandParts[SECOND_PART], "D") == 0) {
+                    if (intOrString(commandParts[FIRST_PART]) == INT && strcmp(commandParts[THIRD_PART], "*") == 0) {
+                        continue;
+                    }
+                    else if (intOrString(commandParts[FIRST_PART]) == INT && intOrString(commandParts[THIRD_PART]) == STRING) {
+                        continue;
+                    }
+                }
+                else if (strcmp(commandParts[SECOND_PART], "E") == 0)
+                    continue;
             }
         }
-
         // Append the data for parsing.
         else
             appendToBuffer(input, data, &sizeOfData, &currentIndex);
@@ -69,12 +103,19 @@ int main() {
 
 // STRING RELATED METHODS
 
+//void recognizePartsTypes(char *commandParts[], int partsTypes[]) {
+//    int i = 0;
+//    while (i < COMMAND_SIZE) {
+//        partsTypes[i] = intOrString(commandParts[i]);
+//        i++;
+//    }
+//}
+
 int intOrString(const char *data) {
     int i = 0;
     while(data[i] != '\0') {
-        if (!('0' <= data[i] && data[i] <= '9')) {
+        if (!('0' <= data[i] && data[i] <= '9'))
             return 1;
-        }
         i++;
     }
     return 0;
