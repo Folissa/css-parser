@@ -6,6 +6,8 @@ using namespace std;
 
 int main() {
 
+    // TODO: Problem with first selector, attribute etc. being empty
+
     char input[INPUT_SIZE];
     char *data = (char *) malloc(DATA_SIZE * sizeof(char));
     int sizeOfData = 0, currentIndex = 0, appendingAllowed = 1, parseData = 0;
@@ -30,8 +32,7 @@ int main() {
         if (!appendingAllowed) {
             if (parseData) {
                 // Data parsing.
-//                printString(data);
-                dataParser(data, blocks, sections);
+                sections = dataParser(data, blocks, sections);
                 parseData = 0;
 
                 // After we parse all data into according data structures we can erase the data buffer.
@@ -39,7 +40,11 @@ int main() {
             }
             // Invoke the commands.
             if (strcmp(input, "?") == 0) {
-                continue;
+                cout << "!!!!!!!!!!!!" << endl;
+                printBlocks(blocks);
+                printSections(sections);
+                cout << "!!!!!!!!!!!!" << endl;
+                cout << "? == " << getListLength<section>(sections) << endl;
             }
             else {
                 // Parse the command.
@@ -176,7 +181,7 @@ int isGlobalAttribute(const char *data, int currentIndex) {
     return 0;
 }
 
-void dataParser(char *data, block *blocks, section *sections) {
+section *dataParser(char *data, block *blocks, section *sections) {
     int currentIndex = 0;
     while (data[currentIndex] != '\0') {
         int globalAttribute = isGlobalAttribute(data, currentIndex);
@@ -193,6 +198,7 @@ void dataParser(char *data, block *blocks, section *sections) {
         }
         currentIndex++;
     }
+    return sections;
 }
 
 void parseSelectors(char *data, int *currentIndex, section *sections) {
@@ -209,15 +215,25 @@ void parseSelectors(char *data, int *currentIndex, section *sections) {
         char selectorNameTrimmed[INPUT_SIZE];
         strcpy(selectorNameTrimmed, trimSpaces(selectorName));
         // Add selector to the list.
+
         section *lastSection;
         lastSection = getLast<section>(sections);
 
-        selector *newSelector;
-        newSelector = createSelectorNode();
+        if (lastSection->selectorList == nullptr) {
+            selector *selectors;
+            selectors = createSelectorNode();
+            lastSection->selectorList = selectors;
 
-        strcpy(newSelector->selectorName, selectorNameTrimmed);
-        lastSection->selectorList = addLast<selector>(lastSection->selectorList, newSelector);
-        cout << selectorNameTrimmed << endl;
+            strcpy(lastSection->selectorList->selectorName, selectorNameTrimmed);
+        }
+
+        else {
+            selector *newSelector;
+            newSelector = createSelectorNode();
+
+            strcpy(newSelector->selectorName, selectorNameTrimmed);
+            lastSection->selectorList = addLast<selector>(lastSection->selectorList, newSelector);
+        }
         // Skip ',' or '{'.
         (*currentIndex)++;
     }
@@ -234,17 +250,6 @@ void parseAttributes(char *data, int *currentIndex, section *sections) {
             j++;
         }
         attributeName[j] = '\0';
-        char attributeNameTrimmed[INPUT_SIZE];
-        strcpy(attributeNameTrimmed, trimSpaces(attributeName));
-        // Add attribute name to the list.
-        /// TODO: Put in function
-        section *lastSection;
-        lastSection = getLast<section>(sections);
-        attribute *newAttribute;
-        newAttribute = createAttributeNode();
-        strcpy(newAttribute->attributeName, attributeNameTrimmed);
-        // TODO:
-        cout << attributeNameTrimmed << endl;
         // Skip ':'.
         (*currentIndex)++;
         char attributeValue[INPUT_SIZE];
@@ -255,12 +260,25 @@ void parseAttributes(char *data, int *currentIndex, section *sections) {
             k++;
         }
         attributeValue[k] = '\0';
-        char attributeValueTrimmed[INPUT_SIZE];
-        strcpy(attributeValueTrimmed, trimSpaces(attributeValue));
-        // Add attribute attributeValue to the list.
-        strcpy(newAttribute->attributeValue, attributeValueTrimmed);
-        lastSection->attributeList = addLast<attribute>(lastSection->attributeList, newAttribute);
-        cout << attributeValueTrimmed << endl;
+        // Add attribute name and value to the list.
+
+        section *lastSection;
+        lastSection = getLast<section>(sections);
+        if (lastSection->attributeList == nullptr) {
+            attribute *attributes;
+            attributes = createAttributeNode();
+            lastSection->attributeList = attributes;
+            strcpy(lastSection->attributeList->attributeName, trimSpaces(attributeName));
+            strcpy(lastSection->attributeList->attributeValue, trimSpaces(attributeValue));
+        }
+        else {
+            attribute *newAttribute;
+            newAttribute = createAttributeNode();
+
+            strcpy(newAttribute->attributeName, trimSpaces(attributeName));
+            strcpy(newAttribute->attributeValue, trimSpaces(attributeValue));
+            lastSection->attributeList = addLast<attribute>(lastSection->attributeList, newAttribute);
+        }
         // Skip ';'.
         if (i < attributesCount - 1)
             (*currentIndex)++;
@@ -338,14 +356,9 @@ section *addSection(block *blocks, section *sections) {
 }
 
 void createSection(block *lastBlock, section *sections) {
-    attribute *attributes;
-    attributes = createAttributeNode();
-    selector *selectors;
-    selectors = createSelectorNode();
     section *lastSection;
     lastSection = getLast<section>(sections);
-    lastSection->attributeList = attributes;
-    lastSection->selectorList = selectors;
+
     lastBlock->sectionArray[lastBlock->takenSections] = lastSection;
     lastBlock->takenSections++;
 }
@@ -353,35 +366,44 @@ void createSection(block *lastBlock, section *sections) {
 block *createBlockNode() {
     block *newBlock;
     newBlock = (block *)malloc(sizeof(block));
+
     newBlock->takenSections = 0;
     newBlock->prev = nullptr;
     newBlock->next = nullptr;
+
     return newBlock;
 }
 
 section *createSectionNode() {
     section *newSection;
     newSection = (section *)malloc(sizeof(section));
+
     newSection->selectorList = nullptr;
     newSection->attributeList = nullptr;
+
     newSection->prev = nullptr;
     newSection->next = nullptr;
     return newSection;
 }
 
+// TODO: Create one type for these two.
 selector *createSelectorNode() {
     selector *newSelector;
     newSelector = (selector *)malloc(sizeof(selector));
+
     newSelector->prev = nullptr;
     newSelector->next = nullptr;
+
     return newSelector;
 }
 
 attribute *createAttributeNode() {
     attribute *newAttribute;
     newAttribute = (attribute *)malloc(sizeof(attribute));
+
     newAttribute->prev = nullptr;
     newAttribute->next = nullptr;
+
     return newAttribute;
 }
 
@@ -389,6 +411,42 @@ template <typename type> void printList(type *firstNode) {
     type *temporary = firstNode;
     while (temporary != nullptr) {
         cout << temporary->data;
+        temporary = temporary->next;
+    }
+}
+
+void printBlocks(block *blocks) {
+    block *temporary = blocks;
+    while (temporary != nullptr) {
+        cout << "BLOCK" << endl;
+        cout << "Taken sections: " << temporary->takenSections << endl;
+        temporary = temporary->next;
+    }
+}
+
+void printSections(section *sections) {
+    section *temporary = sections;
+    while (temporary != nullptr) {
+        cout << "SECTION" << endl;
+        printSelectors(temporary->selectorList);
+        printAttributes(temporary->attributeList);
+        temporary = temporary->next;
+    }
+}
+
+void printSelectors(selector *selectors) {
+    selector *temporary = selectors;
+    while (temporary != nullptr) {
+        cout << "Selector:" << temporary->selectorName << endl;
+        temporary = temporary->next;
+    }
+}
+
+void printAttributes(attribute *attributes) {
+    attribute *temporary = attributes;
+    while (temporary != nullptr) {
+        cout << "Attribute:" << temporary->attributeName << endl;
+        cout << "Value:" << temporary->attributeValue << endl;
         temporary = temporary->next;
     }
 }

@@ -88,7 +88,7 @@ char **parseCommand(char *commandParts[], char *command);
 int isGlobalAttribute(const char *data, int currentIndex);
 
 //
-void dataParser(char *data, block *blocks, section *sections);
+section *dataParser(char *data, block *blocks, section *sections);
 
 //
 int countSelectors(const char *data, int currentIndex);
@@ -121,6 +121,18 @@ attribute *createAttributeNode();
 
 // Prints the data of all the nodes in the list.
 template <typename type> void printList(type *firstNode);
+
+//
+void printBlocks(block *blocks);
+
+//
+void printSections(section *sections);
+
+//
+void printSelectors(selector *selectors);
+
+//
+void printAttributes(attribute *attributes);
 
 // Returns the length of a list.
 template <typename type> int getListLength(type *firstNode);
