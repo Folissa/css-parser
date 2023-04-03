@@ -9,6 +9,9 @@ int main() {
     char input[INPUT_SIZE];
     char *data = (char *) malloc(DATA_SIZE * sizeof(char));
     int sizeOfData = 0, currentIndex = 0, appendingAllowed = 1, parseData = 0;
+    block *blocks = nullptr;
+    blocks = addBlock(blocks);
+    section *sections = nullptr;
 
     // Inputs until a whitespace.
     while (cin >> input) {
@@ -28,7 +31,7 @@ int main() {
             if (parseData) {
                 // Data parsing.
 //                printString(data);
-                dataParser(data);
+                dataParser(data, blocks, sections);
                 parseData = 0;
 
                 // After we parse all data into according data structures we can erase the data buffer.
@@ -83,15 +86,10 @@ int main() {
             appendToBuffer(input, data, &sizeOfData, &currentIndex);
     }
 
-    free(data);
-
-    // Initialize data blocks and sections.
-//    block *blocks;
-//    section *sections;
-
     // Free the allocated memory.
-//    free(sections);
-//    free(blocks);
+    deleteSelectorsAttributes(sections);
+    deleteList<section>(&sections);
+    deleteList<block>(&blocks);
 
     return 0;
 }
@@ -178,7 +176,7 @@ int isGlobalAttribute(const char *data, int currentIndex) {
     return 0;
 }
 
-void dataParser(char *data) {
+void dataParser(char *data, block *blocks, section *sections) {
     int currentIndex = 0;
     while (data[currentIndex] != '\0') {
         int globalAttribute = isGlobalAttribute(data, currentIndex);
@@ -189,14 +187,15 @@ void dataParser(char *data) {
         }
         // Logic for a section.
         else {
-            parseSelectors(data, &currentIndex);
-            parseAttributes(data, &currentIndex);
+            sections = addSection(blocks, sections);
+            parseSelectors(data, &currentIndex, sections);
+            parseAttributes(data, &currentIndex, sections);
         }
         currentIndex++;
     }
 }
 
-void parseSelectors(char *data, int *currentIndex) {
+void parseSelectors(char *data, int *currentIndex, section *sections) {
     int selectorsCount = countSelectors(data, *currentIndex);
     for (int i = 0; i < selectorsCount; i++) {
         char selectorName[INPUT_SIZE];
@@ -210,14 +209,21 @@ void parseSelectors(char *data, int *currentIndex) {
         char selectorNameTrimmed[INPUT_SIZE];
         strcpy(selectorNameTrimmed, trimSpaces(selectorName));
         // Add selector to the list.
-        // TODO: Add selector to the list
+        section *lastSection;
+        lastSection = getLast<section>(sections);
+
+        selector *newSelector;
+        newSelector = createSelectorNode();
+
+        strcpy(newSelector->selectorName, selectorNameTrimmed);
+        lastSection->selectorList = addLast<selector>(lastSection->selectorList, newSelector);
         cout << selectorNameTrimmed << endl;
         // Skip ',' or '{'.
         (*currentIndex)++;
     }
 }
 
-void parseAttributes(char *data, int *currentIndex) {
+void parseAttributes(char *data, int *currentIndex, section *sections) {
     int attributesCount = countAttributes(data, *currentIndex);
     for (int i = 0; i < attributesCount; i++) {
         char attributeName[INPUT_SIZE];
@@ -231,7 +237,13 @@ void parseAttributes(char *data, int *currentIndex) {
         char attributeNameTrimmed[INPUT_SIZE];
         strcpy(attributeNameTrimmed, trimSpaces(attributeName));
         // Add attribute name to the list.
-        // TODO: Add attribute name to the list
+        /// TODO: Put in function
+        section *lastSection;
+        lastSection = getLast<section>(sections);
+        attribute *newAttribute;
+        newAttribute = createAttributeNode();
+        strcpy(newAttribute->attributeName, attributeNameTrimmed);
+        // TODO:
         cout << attributeNameTrimmed << endl;
         // Skip ':'.
         (*currentIndex)++;
@@ -245,8 +257,9 @@ void parseAttributes(char *data, int *currentIndex) {
         attributeValue[k] = '\0';
         char attributeValueTrimmed[INPUT_SIZE];
         strcpy(attributeValueTrimmed, trimSpaces(attributeValue));
-        // Add attribute value to the list.
-        // TODO: Add attribute value to the list
+        // Add attribute attributeValue to the list.
+        strcpy(newAttribute->attributeValue, attributeValueTrimmed);
+        lastSection->attributeList = addLast<attribute>(lastSection->attributeList, newAttribute);
         cout << attributeValueTrimmed << endl;
         // Skip ';'.
         if (i < attributesCount - 1)
@@ -270,7 +283,6 @@ int countSelectors(const char *data, int currentIndex) {
     return selectorsCount;
 }
 
-
 int countAttributes(const char *data, int currentIndex) {
     int attributesCount = 0;
     while(data[currentIndex] != '}') {
@@ -281,8 +293,97 @@ int countAttributes(const char *data, int currentIndex) {
     return attributesCount;
 }
 
-
 // LIST RELATED METHODS
+
+block *addBlock(block *blocks) {
+    if (blocks == nullptr)
+        blocks = createBlockNode();
+    else {
+        block *newBlock;
+        newBlock = createBlockNode();
+        blocks = addLast<block>(blocks, newBlock);
+    }
+    return blocks;
+}
+
+section *addSection(block *blocks, section *sections) {
+    block *lastBLock;
+    lastBLock = getLast<block>(blocks);
+    if (sections == nullptr) {
+        sections = createSectionNode();
+
+        createSection(lastBLock, sections);
+    }
+    else {
+        if (lastBLock->takenSections < SECTIONS_PER_BLOCK) {
+            section *newSection;
+            newSection = createSectionNode();
+            sections = addLast<section>(sections, newSection);
+
+            createSection(lastBLock, sections);
+        }
+        else {
+            blocks = addBlock(blocks);
+            block *newBlock;
+            newBlock = lastBLock->next;
+
+            section *newSection;
+            newSection = createSectionNode();
+            sections = addLast<section>(sections, newSection);
+
+            createSection(newBlock, sections);
+        }
+    }
+    return sections;
+}
+
+void createSection(block *lastBlock, section *sections) {
+    attribute *attributes;
+    attributes = createAttributeNode();
+    selector *selectors;
+    selectors = createSelectorNode();
+    section *lastSection;
+    lastSection = getLast<section>(sections);
+    lastSection->attributeList = attributes;
+    lastSection->selectorList = selectors;
+    lastBlock->sectionArray[lastBlock->takenSections] = lastSection;
+    lastBlock->takenSections++;
+}
+
+block *createBlockNode() {
+    block *newBlock;
+    newBlock = (block *)malloc(sizeof(block));
+    newBlock->takenSections = 0;
+    newBlock->prev = nullptr;
+    newBlock->next = nullptr;
+    return newBlock;
+}
+
+section *createSectionNode() {
+    section *newSection;
+    newSection = (section *)malloc(sizeof(section));
+    newSection->selectorList = nullptr;
+    newSection->attributeList = nullptr;
+    newSection->prev = nullptr;
+    newSection->next = nullptr;
+    return newSection;
+}
+
+selector *createSelectorNode() {
+    selector *newSelector;
+    newSelector = (selector *)malloc(sizeof(selector));
+    newSelector->prev = nullptr;
+    newSelector->next = nullptr;
+    return newSelector;
+}
+
+attribute *createAttributeNode() {
+    attribute *newAttribute;
+    newAttribute = (attribute *)malloc(sizeof(attribute));
+    newAttribute->prev = nullptr;
+    newAttribute->next = nullptr;
+    return newAttribute;
+}
 
 template <typename type> void printList(type *firstNode) {
     type *temporary = firstNode;
@@ -358,13 +459,13 @@ template <typename type> void insertAfter(type *newNode, type *node) {
     node->next = newNode;
 }
 
-template <typename type> type addLast(type *firstNode, type *newNode) {
-    type *lastNode = getLast(firstNode);
+template <typename type> type *addLast(type *firstNode, type *newNode) {
+    type *lastNode = getLast<type>(firstNode);
     newNode->prev = lastNode;
     if (lastNode == nullptr)
         return newNode;
     lastNode->next = newNode;
-    return  firstNode;
+    return firstNode;
 }
 
 template <typename type> type removeFirst(type *firstNode) {
@@ -395,6 +496,31 @@ template <typename type> void removeAfter(type *node) {
 template <typename type> type removeLast(type *firstNode) {
     type *lastNode = getLast(firstNode);
     return removeNode(firstNode, lastNode);
+}
+
+template <typename type> void deleteList(type **headReference) {
+    // https://www.geeksforgeeks.org/write-a-function-to-delete-a-linked-list/
+    type *current = *headReference;
+    type *next;
+
+    while (current != NULL) {
+        next = current->next;
+        free(current);
+        current = next;
+    }
+
+    *headReference = NULL;
+}
+
+void deleteSelectorsAttributes(section *sections) {
+    section *current = sections;
+    section *next;
+    while (current != nullptr) {
+        next = current->next;
+        deleteList<selector>(&(current->selectorList));
+        deleteList<attribute>(&(current->attributeList));
+        current = next;
+    }
 }
 
 /*

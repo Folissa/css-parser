@@ -51,7 +51,7 @@ typedef struct selector {
 
 typedef struct attribute {
     char attributeName[INPUT_SIZE] = {};
-    char value[INPUT_SIZE] = {};
+    char attributeValue[INPUT_SIZE] = {};
     attribute *prev = nullptr;
     attribute *next = nullptr;
 } attribute;
@@ -76,10 +76,10 @@ void printString(char *data);
 // DATA PARSING RELATED METHODS
 
 //
-void parseSelectors(char *data, int *currentIndex);
+void parseSelectors(char *data, int *currentIndex, section *sections);
 
 //
-void parseAttributes(char *data, int *currentIndex);
+void parseAttributes(char *data, int *currentIndex, section *sections);
 
 //
 char **parseCommand(char *commandParts[], char *command);
@@ -88,7 +88,7 @@ char **parseCommand(char *commandParts[], char *command);
 int isGlobalAttribute(const char *data, int currentIndex);
 
 //
-void dataParser(char *data);
+void dataParser(char *data, block *blocks, section *sections);
 
 //
 int countSelectors(const char *data, int currentIndex);
@@ -97,6 +97,27 @@ int countSelectors(const char *data, int currentIndex);
 int countAttributes(const char *data, int currentIndex);
 
 // LIST RELATED METHODS
+
+//
+block *addBlock(block *blocks);
+
+//
+section *addSection(block *blocks, section *sections);
+
+//
+void createSection(block *block, section *sections);
+
+//
+block *createBlockNode();
+
+//
+section *createSectionNode();
+
+//
+selector *createSelectorNode();
+
+//
+attribute *createAttributeNode();
 
 // Prints the data of all the nodes in the list.
 template <typename type> void printList(type *firstNode);
@@ -123,7 +144,7 @@ template <typename type> type insertBefore(type *firstNode, type *newNode, type 
 template <typename type> void insertAfter(type *newNode, type *node);
 
 //
-template <typename type> type addLast(type *firstNode, type *newNode);
+template <typename type> type *addLast(type *firstNode, type *newNode);
 
 //
 template <typename type> type removeFirst(type *firstNode);
@@ -136,5 +157,11 @@ template <typename type> void removeAfter(type *node);
 
 //
 template <typename type> type removeLast(type *firstNode);
+
+//
+template <typename type> void deleteList(type **headReference);
+
+//
+void deleteSelectorsAttributes(section *sections);
 
 #endif //CSS_MAIN_H
