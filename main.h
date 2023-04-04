@@ -9,7 +9,6 @@
 #define INPUT_SIZE 256
 #define DATA_SIZE 4096
 #define COMMAND_SIZE 3
-#define SEPARATOR_SIZE 2
 
 enum type {
     INT,
@@ -100,6 +99,15 @@ int countAttributes(const char *data, int currentIndex);
 // LIST RELATED METHODS
 
 //
+char *getAttributeValue(section *searchedSection, const char *attributeToFind);
+
+//
+int attributeCounter(section *sections, const char *attributeToCount);
+
+//
+int selectorCounter(section *sections, const char *selectorToCount);
+
+//
 block *addBlock(block *blocks);
 
 //
@@ -142,7 +150,7 @@ template <typename type> int getListLength(type *firstNode);
 template <typename type> type getFirst(type *firstNode);
 
 // Returns the node at a specific location of a list.
-template <typename type> type getAtPosition(type *firstNode, int position);
+template <typename type> type *getAtPosition(type *firstNode, int position);
 
 // Returns the last node of a list.
 template <typename type> type *getLast(type *firstNode);
@@ -163,7 +171,7 @@ template <typename type> type *addLast(type *firstNode, type *newNode);
 template <typename type> type removeFirst(type *firstNode);
 
 //
-template <typename type> type removeNode(type *firstNode, type *node);
+template <typename type> type *removeNode(type *firstNode, type *node);
 
 //
 template <typename type> void removeAfter(type *node);
