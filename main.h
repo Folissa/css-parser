@@ -6,8 +6,8 @@
 #include <stdlib.h>
 
 #define SECTIONS_PER_BLOCK 8
-#define INPUT_SIZE 256
-#define DATA_SIZE 4096
+#define INPUT_SIZE 512
+#define DATA_SIZE 8192
 #define COMMAND_SIZE 3
 
 enum type {
@@ -65,7 +65,7 @@ char *trimSpaces(char *data);
 int intOrString(const char *data);
 
 //
-void freeString(char *data, int *length);
+void freeData(char *data, int *length);
 
 //
 void appendToBuffer(const char *input, char *data, int *sizeOfData, int *currentIndex);
@@ -100,6 +100,9 @@ int countAttributes(const char *data, int currentIndex);
 
 //
 char *getAttributeValue(section *searchedSection, const char *attributeToFind);
+
+//
+attribute *getAttribute(section *searchedSection, const char *attributeToFind);
 
 //
 int attributeCounter(section *sections, const char *attributeToCount);
@@ -172,6 +175,12 @@ template <typename type> type removeFirst(type *firstNode);
 
 //
 template <typename type> type *removeNode(type *firstNode, type *node);
+
+//
+section *removeSectionNode(block *blocks, section *sectionToDelete);
+
+//
+block *removeLastBlockNode(block *blocks);
 
 //
 template <typename type> void removeAfter(type *node);
