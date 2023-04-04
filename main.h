@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <string.h>
+#include <stdlib.h>
 
 #define SECTIONS_PER_BLOCK 8
 #define INPUT_SIZE 256
@@ -76,13 +77,13 @@ void printString(char *data);
 // DATA PARSING RELATED METHODS
 
 //
-void parseSelectors(char *data, int *currentIndex, section *sections);
+section *parseSelectors(char *data, int *currentIndex, section *sections);
 
 //
-void parseAttributes(char *data, int *currentIndex, section *sections);
+section *parseAttributes(char *data, int *currentIndex, section *sections);
 
 //
-char **parseCommand(char *commandParts[], char *command);
+void parseCommand(const char *input, char commandParts[][INPUT_SIZE]);
 
 //
 int isGlobalAttribute(const char *data, int currentIndex);
@@ -105,7 +106,7 @@ block *addBlock(block *blocks);
 section *addSection(block *blocks, section *sections);
 
 //
-void createSection(block *block, section *sections);
+section *createSection(block *block, section *sections);
 
 //
 block *createBlockNode();
@@ -174,6 +175,6 @@ template <typename type> type removeLast(type *firstNode);
 template <typename type> void deleteList(type **headReference);
 
 //
-void deleteSelectorsAttributes(section *sections);
+section *deleteSelectorsAttributes(section *sections);
 
 #endif //CSS_MAIN_H

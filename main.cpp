@@ -5,16 +5,13 @@ using namespace std;
 
 
 int main() {
-
-    // TODO: Problem with first selector, attribute etc. being empty
-
     char input[INPUT_SIZE];
     char *data = (char *) malloc(DATA_SIZE * sizeof(char));
+    memset(data, '\0', DATA_SIZE);
     int sizeOfData = 0, currentIndex = 0, appendingAllowed = 1, parseData = 0;
     block *blocks = nullptr;
     blocks = addBlock(blocks);
     section *sections = nullptr;
-
     // Inputs until a whitespace.
     while (cin >> input) {
         // Check if we invoke the commands or input the data to the buffer.
@@ -27,63 +24,57 @@ int main() {
             appendingAllowed = 1;
             continue;
         }
-
         // Commands handling.
         if (!appendingAllowed) {
             if (parseData) {
                 // Data parsing.
                 sections = dataParser(data, blocks, sections);
                 parseData = 0;
-
                 // After we parse all data into according data structures we can erase the data buffer.
                 freeString(data, &currentIndex);
             }
             // Invoke the commands.
             if (strcmp(input, "?") == 0) {
-                cout << "!!!!!!!!!!!!" << endl;
-                printBlocks(blocks);
-                printSections(sections);
-                cout << "!!!!!!!!!!!!" << endl;
                 cout << "? == " << getListLength<section>(sections) << endl;
             }
             else {
                 // Parse the command.
-                char *commandParts[COMMAND_SIZE];
-                parseCommand(commandParts, input);
+                char commandParts[COMMAND_SIZE][INPUT_SIZE];
+                parseCommand(input, commandParts);
 
                 // Then invoke it.
                 if (strcmp(commandParts[SECOND_PART], "S") == 0) {
                     if (intOrString(commandParts[FIRST_PART]) == INT && strcmp(commandParts[THIRD_PART], "?") == 0) {
-                        continue;
+                        cout << commandParts[FIRST_PART] << ",S,? == " << endl;
                     }
                     else if (intOrString(commandParts[FIRST_PART]) == INT && intOrString(commandParts[THIRD_PART]) == INT) {
-                        continue;
+                        cout << commandParts[FIRST_PART] << ",S," << commandParts[THIRD_PART] << " == " << endl;
                     }
                     else if (intOrString(commandParts[FIRST_PART]) == STRING && strcmp(commandParts[THIRD_PART], "?") == 0) {
-                        continue;
+                        cout << commandParts[FIRST_PART] << ",S,? == " << endl;
                     }
                 }
                 else if (strcmp(commandParts[SECOND_PART], "A") == 0) {
                     if (intOrString(commandParts[FIRST_PART]) == INT && strcmp(commandParts[THIRD_PART], "?") == 0) {
-                        continue;
+                        cout << commandParts[FIRST_PART] << ",A,? == " << endl;
                     }
                     else if (intOrString(commandParts[FIRST_PART]) == INT && intOrString(commandParts[THIRD_PART]) == STRING) {
-                        continue;
+                        cout << commandParts[FIRST_PART] << ",A," << commandParts[THIRD_PART] << " == " << endl;
                     }
                     else if (intOrString(commandParts[FIRST_PART]) == STRING && strcmp(commandParts[THIRD_PART], "?") == 0) {
-                        continue;
+                        cout << commandParts[FIRST_PART] << ",A,? == " << endl;
                     }
                 }
                 else if (strcmp(commandParts[SECOND_PART], "D") == 0) {
                     if (intOrString(commandParts[FIRST_PART]) == INT && strcmp(commandParts[THIRD_PART], "*") == 0) {
-                        continue;
+                        cout << commandParts[FIRST_PART] << ",D,* == " << endl;
                     }
                     else if (intOrString(commandParts[FIRST_PART]) == INT && intOrString(commandParts[THIRD_PART]) == STRING) {
-                        continue;
+                        cout << commandParts[FIRST_PART] << ",D," << commandParts[THIRD_PART] << " == " << endl;
                     }
                 }
                 else if (strcmp(commandParts[SECOND_PART], "E") == 0)
-                    continue;
+                    cout << commandParts[FIRST_PART] << ",E," << commandParts[THIRD_PART] << " == " << endl;
             }
         }
         // Append the data for parsing.
@@ -92,9 +83,10 @@ int main() {
     }
 
     // Free the allocated memory.
-    deleteSelectorsAttributes(sections);
+    sections = deleteSelectorsAttributes(sections);
     deleteList<section>(&sections);
     deleteList<block>(&blocks);
+    free(data);
 
     return 0;
 }
@@ -158,16 +150,21 @@ void printString(char *data) {
 
 // DATA PARSING RELATED METHODS
 
-char **parseCommand(char *commandParts[], char *command) {
-    const char separator[SEPARATOR_SIZE] = ",";
-    // https://www.tutorialspoint.com/c_standard_library/c_function_strtok.htm
-    commandParts[0] = strtok(command, separator);
-    int i = 0;
-    while( commandParts[i] != nullptr) {
-        i++;
-        commandParts[i] = strtok(nullptr, separator);
+void parseCommand(const char *input, char commandParts[][INPUT_SIZE]) {
+    const char separator = ',';
+    int commandIndex = 0;
+    for (int j = 0; j < COMMAND_SIZE; j++) {
+        int i = 0;
+        char command[INPUT_SIZE];
+        while (input[commandIndex] != separator && input[commandIndex] != '\0') {
+            command[i] = input[commandIndex];
+            commandIndex++;
+            i++;
+        }
+        commandIndex++;
+        command[i] = '\0';
+        strcpy(commandParts[j], command);
     }
-    return commandParts;
 }
 
 int isGlobalAttribute(const char *data, int currentIndex) {
@@ -193,15 +190,15 @@ section *dataParser(char *data, block *blocks, section *sections) {
         // Logic for a section.
         else {
             sections = addSection(blocks, sections);
-            parseSelectors(data, &currentIndex, sections);
-            parseAttributes(data, &currentIndex, sections);
+            sections = parseSelectors(data, &currentIndex, sections);
+            sections = parseAttributes(data, &currentIndex, sections);
         }
         currentIndex++;
     }
     return sections;
 }
 
-void parseSelectors(char *data, int *currentIndex, section *sections) {
+section *parseSelectors(char *data, int *currentIndex, section *sections) {
     int selectorsCount = countSelectors(data, *currentIndex);
     for (int i = 0; i < selectorsCount; i++) {
         char selectorName[INPUT_SIZE];
@@ -237,9 +234,10 @@ void parseSelectors(char *data, int *currentIndex, section *sections) {
         // Skip ',' or '{'.
         (*currentIndex)++;
     }
+    return sections;
 }
 
-void parseAttributes(char *data, int *currentIndex, section *sections) {
+section *parseAttributes(char *data, int *currentIndex, section *sections) {
     int attributesCount = countAttributes(data, *currentIndex);
     for (int i = 0; i < attributesCount; i++) {
         char attributeName[INPUT_SIZE];
@@ -289,6 +287,7 @@ void parseAttributes(char *data, int *currentIndex, section *sections) {
             (*currentIndex)++;
         }
     }
+    return sections;
 }
 
 int countSelectors(const char *data, int currentIndex) {
@@ -330,7 +329,7 @@ section *addSection(block *blocks, section *sections) {
     if (sections == nullptr) {
         sections = createSectionNode();
 
-        createSection(lastBLock, sections);
+        sections = createSection(lastBLock, sections);
     }
     else {
         if (lastBLock->takenSections < SECTIONS_PER_BLOCK) {
@@ -338,7 +337,7 @@ section *addSection(block *blocks, section *sections) {
             newSection = createSectionNode();
             sections = addLast<section>(sections, newSection);
 
-            createSection(lastBLock, sections);
+            sections = createSection(lastBLock, sections);
         }
         else {
             blocks = addBlock(blocks);
@@ -349,18 +348,22 @@ section *addSection(block *blocks, section *sections) {
             newSection = createSectionNode();
             sections = addLast<section>(sections, newSection);
 
-            createSection(newBlock, sections);
+            sections = createSection(newBlock, sections);
         }
     }
     return sections;
 }
 
-void createSection(block *lastBlock, section *sections) {
+section *createSection(block *lastBlock, section *sections) {
     section *lastSection;
     lastSection = getLast<section>(sections);
 
+//    lastSection->selectorList = nullptr;
+//    lastSection->attributeList = nullptr;
+
     lastBlock->sectionArray[lastBlock->takenSections] = lastSection;
     lastBlock->takenSections++;
+    return sections;
 }
 
 block *createBlockNode() {
@@ -383,6 +386,7 @@ section *createSectionNode() {
 
     newSection->prev = nullptr;
     newSection->next = nullptr;
+
     return newSection;
 }
 
@@ -391,6 +395,7 @@ selector *createSelectorNode() {
     selector *newSelector;
     newSelector = (selector *)malloc(sizeof(selector));
 
+    memset(newSelector->selectorName, '\0', INPUT_SIZE);
     newSelector->prev = nullptr;
     newSelector->next = nullptr;
 
@@ -401,6 +406,8 @@ attribute *createAttributeNode() {
     attribute *newAttribute;
     newAttribute = (attribute *)malloc(sizeof(attribute));
 
+    memset(newAttribute->attributeName, '\0', INPUT_SIZE);
+    memset(newAttribute->attributeValue, '\0', INPUT_SIZE);
     newAttribute->prev = nullptr;
     newAttribute->next = nullptr;
 
@@ -570,7 +577,7 @@ template <typename type> void deleteList(type **headReference) {
     *headReference = NULL;
 }
 
-void deleteSelectorsAttributes(section *sections) {
+section *deleteSelectorsAttributes(section *sections) {
     section *current = sections;
     section *next;
     while (current != nullptr) {
@@ -579,6 +586,7 @@ void deleteSelectorsAttributes(section *sections) {
         deleteList<attribute>(&(current->attributeList));
         current = next;
     }
+    return sections;
 }
 
 /*
