@@ -7,7 +7,7 @@
 
 #define SECTIONS_PER_BLOCK 8
 #define INPUT_SIZE 512
-#define DATA_SIZE 8192
+#define DATA_SIZE 262144
 #define COMMAND_SIZE 3
 
 enum type {
@@ -79,7 +79,7 @@ void printString(char *data);
 section *parseSelectors(char *data, int *currentIndex, section *sections);
 
 //
-section *parseAttributes(char *data, int *currentIndex, section *sections);
+section *parseAttributes(block *blocks, char *data, int *currentIndex, section *sections);
 
 //
 void parseCommand(const char *input, char commandParts[][INPUT_SIZE]);
@@ -95,6 +95,9 @@ int countSelectors(const char *data, int currentIndex);
 
 //
 int countAttributes(const char *data, int currentIndex);
+
+//
+char *getAttributeValueBySelector(section *sections, const char *selectorToFind, const char *attributeToFind);
 
 // LIST RELATED METHODS
 

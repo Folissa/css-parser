@@ -37,7 +37,8 @@ int main() {
             }
             // Invoke the commands.
             if (strcmp(input, "?") == 0) {
-                cout << "? == " << getListLength<section>(sections) << endl;}
+                cout << "? == " << getListLength<section>(sections) << endl;
+            }
             else {
                 // Parse the command.
                 char commandParts[COMMAND_SIZE][INPUT_SIZE];
@@ -69,7 +70,7 @@ int main() {
                         else
                             continue;
                     }
-                    // TODO: Error here:
+                        // TODO: Error here:
                     else if (intOrString(commandParts[FIRST_PART]) == STRING && strcmp(commandParts[THIRD_PART], "?") == 0) {
                         cout << commandParts[FIRST_PART] << ",S,? == " << selectorCounter(sections, commandParts[FIRST_PART]) << endl;
                     }
@@ -141,11 +142,10 @@ int main() {
                     }
                 }
                 else if (strcmp(commandParts[SECOND_PART], "E") == 0)
-//                    getAttributeValue()
-                    cout << commandParts[FIRST_PART] << ",E," << commandParts[THIRD_PART] << " == " << endl;
+                    cout << commandParts[FIRST_PART] << ",E," << commandParts[THIRD_PART] << " == " << getAttributeValueBySelector(sections, commandParts[FIRST_PART], commandParts[THIRD_PART]) << endl;
             }
         }
-        // Append the data for parsing.
+            // Append the data for parsing.
         else
             appendToBuffer(input, data, &sizeOfData, &currentIndex);
     }
@@ -252,14 +252,14 @@ section *dataParser(char *data, block *blocks, section *sections) {
         int globalAttribute = isGlobalAttribute(data, currentIndex);
         // Logic for global attribute.
         if (globalAttribute) {
-            currentIndex++;
-            continue;
+            sections = addSection(blocks, sections);
+            sections = parseAttributes(blocks, data, &currentIndex, sections);
         }
         // Logic for a section.
         else {
             sections = addSection(blocks, sections);
             sections = parseSelectors(data, &currentIndex, sections);
-            sections = parseAttributes(data, &currentIndex, sections);
+            sections = parseAttributes(blocks, data, &currentIndex, sections);
         }
         currentIndex++;
     }
@@ -305,7 +305,7 @@ section *parseSelectors(char *data, int *currentIndex, section *sections) {
     return sections;
 }
 
-section *parseAttributes(char *data, int *currentIndex, section *sections) {
+section *parseAttributes(block *blocks, char *data, int *currentIndex, section *sections) {
     int attributesCount = countAttributes(data, *currentIndex);
     for (int i = 0; i < attributesCount; i++) {
         char attributeName[INPUT_SIZE];
@@ -341,20 +341,24 @@ section *parseAttributes(char *data, int *currentIndex, section *sections) {
             attribute *newAttribute;
             newAttribute = createAttributeNode();
             // TODO: Optimize this.
-            // TODO: Error here:
-//            if (getAttribute(lastSection, trimSpaces(attributeName)) != nullptr) {
-//                memset(getAttribute(lastSection, trimSpaces(attributeName))->attributeValue, '\0', INPUT_SIZE);
-//                strcpy(getAttribute(lastSection, trimSpaces(attributeName))->attributeValue, trimSpaces(attributeValue));}
-//            else {
+            attribute *existingAttribute;
+            existingAttribute = getAttribute(lastSection, trimSpaces(attributeName));
+            if (existingAttribute != nullptr) {
+                lastSection->attributeList = removeAttributeNode(blocks, lastSection, existingAttribute);
                 strcpy(newAttribute->attributeName, trimSpaces(attributeName));
                 strcpy(newAttribute->attributeValue, trimSpaces(attributeValue));
                 lastSection->attributeList = addLast<attribute>(lastSection->attributeList, newAttribute);
-//            }
-          }
+            }
+            else {
+                strcpy(newAttribute->attributeName, trimSpaces(attributeName));
+                strcpy(newAttribute->attributeValue, trimSpaces(attributeValue));
+                lastSection->attributeList = addLast<attribute>(lastSection->attributeList, newAttribute);
+            }
+        }
         // Skip ';'.
         if (i < attributesCount - 1)
             (*currentIndex)++;
-        // Skip '}' and anything before.
+            // Skip '}' and anything before.
         else {
             while(data[*currentIndex] != '}')
                 (*currentIndex)++;
@@ -386,28 +390,47 @@ int countAttributes(const char *data, int currentIndex) {
 
 // LIST RELATED METHODS
 
-//selector *getSelector(section *sections, const char *attributeToFind) {
-//    attribute *lastAttribute;
-//    lastAttribute = getLast<attribute>(searchedSection->attributeList);
-//    while (lastAttribute != searchedSection->attributeList) {
-//        if (strcmp(lastAttribute->attributeName, attributeToFind) == 0)
-//            return lastAttribute->attributeValue;
-//        lastAttribute = lastAttribute->prev;
-//    }
-//    if (lastAttribute == searchedSection->attributeList) {
-//        if (strcmp(lastAttribute->attributeName, attributeToFind) == 0)
-//            return lastAttribute->attributeValue;
-//    }
-//    return nullptr;
-//}
+char *getAttributeValueBySelector(section *sections, const char *selectorToFind, const char *attributeToFind) {
+    int sectionsLength = getListLength<section>(sections);
+    for (int i = sectionsLength - 1; i >= 0; i--) {
+        section *lastSection;
+        lastSection = getAtPosition<section>(sections, i);
+        selector *lastSectionSelectors;
+        lastSectionSelectors = lastSection->selectorList;
+
+        int selectorsLength = getListLength<selector>(lastSectionSelectors);
+        for (int j = selectorsLength - 1; j >= 0; j--) {
+            selector *lastSelector;
+            lastSelector = getAtPosition<selector>(lastSectionSelectors, j);
+            if (strcmp(lastSelector->selectorName, selectorToFind) == 0) {
+                attribute *lastSectionAttributes;
+                lastSectionAttributes = lastSection->attributeList;
+                int attributesLength = getListLength<attribute>(lastSectionAttributes);
+                for (int k = attributesLength - 1; k >= 0; k--) {
+                    attribute *lastAttribute;
+                    lastAttribute = getAtPosition<attribute>(lastSectionAttributes, k);
+                    if (strcmp(lastAttribute->attributeName, attributeToFind) == 0) {
+                        return lastAttribute->attributeValue;
+                    }
+                    if (k == 0 && strcmp(lastAttribute->attributeName, attributeToFind) != 0) {
+                        return nullptr;
+                    }
+                }
+            }
+        }
+    }
+    return nullptr;
+
+}
 
 attribute *getAttribute(section *searchedSection, const char *attributeToFind) {
     section *temporary = searchedSection;
-    while (temporary->attributeList != nullptr) {
-        if (strcmp(temporary->attributeList->attributeName, attributeToFind) == 0) {
-            return temporary->attributeList;
+    attribute *temporaryAttributeList = temporary->attributeList;
+    while (temporaryAttributeList != nullptr) {
+        if (strcmp(temporaryAttributeList->attributeName, attributeToFind) == 0) {
+            return temporaryAttributeList;
         }
-        temporary->attributeList = temporary->attributeList->next;
+        temporaryAttributeList = temporaryAttributeList->next;
     }
     return nullptr;
 }
@@ -416,11 +439,12 @@ int attributeCounter(section *sections, const char *attributeToCount) {
     int count = 0;
     section *temporary = sections;
     while (temporary != nullptr) {
-        while (temporary->attributeList != nullptr) {
-            if (strcmp(temporary->attributeList->attributeName, attributeToCount) == 0) {
+        attribute *temporaryAttributeList = temporary->attributeList;
+        while (temporaryAttributeList != nullptr) {
+            if (strcmp(temporaryAttributeList->attributeName, attributeToCount) == 0) {
                 count++;
             }
-            temporary->attributeList = temporary->attributeList->next;
+            temporaryAttributeList = temporaryAttributeList->next;
         }
         temporary = temporary->next;
     }
@@ -431,11 +455,12 @@ int selectorCounter(section *sections, const char *selectorToCount) {
     int count = 0;
     section *temporary = sections;
     while (temporary != nullptr) {
-        while (temporary->selectorList != nullptr) {
-            if (strcmp(temporary->selectorList->selectorName, selectorToCount) == 0) {
+        selector *temporarySelectorList = temporary->selectorList;
+        while (temporarySelectorList != nullptr) {
+            if (strcmp(temporarySelectorList->selectorName, selectorToCount) == 0) {
                 count++;
             }
-            temporary->selectorList = temporary->selectorList->next;
+            temporarySelectorList = temporarySelectorList->next;
         }
         temporary = temporary->next;
     }
