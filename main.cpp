@@ -37,8 +37,7 @@ int main() {
             }
             // Invoke the commands.
             if (strcmp(input, "?") == 0) {
-                cout << "? == " << getListLength<section>(sections) << endl;
-            }
+                cout << "? == " << getListLength<section>(sections) << endl;}
             else {
                 // Parse the command.
                 char commandParts[COMMAND_SIZE][INPUT_SIZE];
@@ -89,9 +88,14 @@ int main() {
                         int sectionNumber = atoi(commandParts[FIRST_PART]) - 1;
                         section *requestedSection;
                         requestedSection = getAtPosition<section>(sections, sectionNumber);
-                        // TODO: Optimize this.
-                        if (getAttributeValue(requestedSection, commandParts[THIRD_PART]) != nullptr)
-                            cout << commandParts[FIRST_PART] << ",A," << commandParts[THIRD_PART] << " == " << getAttributeValue(requestedSection, commandParts[THIRD_PART]) << endl;
+                        attribute *requestedAttribute;
+                        if (requestedSection != nullptr) {
+                            requestedAttribute = getAttribute(requestedSection, commandParts[THIRD_PART]);
+                        }
+                        else
+                            continue;
+                        if (requestedAttribute != nullptr)
+                            cout << commandParts[FIRST_PART] << ",A," << commandParts[THIRD_PART] << " == " << requestedAttribute->attributeValue << endl;
                         else
                             continue;
                     }
@@ -105,14 +109,39 @@ int main() {
                         int sectionNumber = atoi(commandParts[FIRST_PART]) - 1;
                         section *requestedSection;
                         requestedSection = getAtPosition<section>(sections, sectionNumber);
-                        sections = removeSectionNode(blocks, requestedSection);
+                        sections = removeSectionNode(sections, requestedSection);
+                        // TODO: Not sure if it was deleted...
+                        blocks->takenSections--;
+                        removeLastBlockNode(blocks);
+                        // TODO: What if we don't delete it?
                         cout << commandParts[FIRST_PART] << ",D,* == deleted" << endl;
                     }
                     else if (intOrString(commandParts[FIRST_PART]) == INT && intOrString(commandParts[THIRD_PART]) == STRING) {
-                        cout << commandParts[FIRST_PART] << ",D," << commandParts[THIRD_PART] << " == deleted" << endl;
+                        int sectionNumber = atoi(commandParts[FIRST_PART]) - 1;
+                        section *requestedSection;
+                        requestedSection = getAtPosition<section>(sections, sectionNumber);
+                        attribute *requestedAttribute;
+                        if (requestedSection != nullptr) {
+                            requestedAttribute = getAttribute(requestedSection, commandParts[THIRD_PART]);
+                        }
+                        else
+                            continue;
+                        if (requestedAttribute != nullptr) {
+                            requestedSection->attributeList = removeAttributeNode(blocks, requestedSection, requestedAttribute);
+                            if (requestedSection->attributeList == nullptr) {
+                                sections = removeSectionNode(sections, requestedSection);
+                                // TODO: Not sure if it was deleted...
+                                blocks->takenSections--;
+                                removeLastBlockNode(blocks);
+                            }
+                            cout << commandParts[FIRST_PART] << ",D," << commandParts[THIRD_PART] << " == deleted" << endl;
+                        }
+                        else
+                            continue;
                     }
                 }
                 else if (strcmp(commandParts[SECOND_PART], "E") == 0)
+//                    getAttributeValue()
                     cout << commandParts[FIRST_PART] << ",E," << commandParts[THIRD_PART] << " == " << endl;
             }
         }
@@ -357,16 +386,20 @@ int countAttributes(const char *data, int currentIndex) {
 
 // LIST RELATED METHODS
 
-char *getAttributeValue(section *searchedSection, const char *attributeToFind) {
-    section *temporary = searchedSection;
-    while (temporary->attributeList != nullptr) {
-        if (strcmp(temporary->attributeList->attributeName, attributeToFind) == 0) {
-            return temporary->attributeList->attributeValue;
-        }
-        temporary->attributeList = temporary->attributeList->next;
-    }
-    return nullptr;
-}
+//selector *getSelector(section *sections, const char *attributeToFind) {
+//    attribute *lastAttribute;
+//    lastAttribute = getLast<attribute>(searchedSection->attributeList);
+//    while (lastAttribute != searchedSection->attributeList) {
+//        if (strcmp(lastAttribute->attributeName, attributeToFind) == 0)
+//            return lastAttribute->attributeValue;
+//        lastAttribute = lastAttribute->prev;
+//    }
+//    if (lastAttribute == searchedSection->attributeList) {
+//        if (strcmp(lastAttribute->attributeName, attributeToFind) == 0)
+//            return lastAttribute->attributeValue;
+//    }
+//    return nullptr;
+//}
 
 attribute *getAttribute(section *searchedSection, const char *attributeToFind) {
     section *temporary = searchedSection;
@@ -645,41 +678,37 @@ template <typename type> type removeNode(type *firstNode, type *node) {
     return firstNode;
 }
 
-section *removeSectionNode(block *blocks, section *sectionToDelete) {
+section *removeSectionNode(section *sections, section *sectionToDelete) {
     if (sectionToDelete == nullptr)
-        return blocks->sectionArray[0];
+        return sections;
     if (sectionToDelete->next != nullptr)
         sectionToDelete->next->prev = sectionToDelete->prev;
     if (sectionToDelete->prev == nullptr) {
         deleteList<selector>(&(sectionToDelete->selectorList));
         deleteList<attribute>(&(sectionToDelete->attributeList));
-        blocks->takenSections--;
-        removeLastBlockNode(blocks);
         return sectionToDelete->next;
     }
     sectionToDelete->prev->next = sectionToDelete->next;
     deleteList<selector>(&(sectionToDelete->selectorList));
     deleteList<attribute>(&(sectionToDelete->attributeList));
-    blocks->takenSections--;
-    removeLastBlockNode(blocks);
-    return blocks->sectionArray[0];
+    return sections;
 }
 
-//section *removeSectionNode(block *blocks, section *sectionToDelete) {
-//    if (sectionToDelete == nullptr)
-//        return blocks->sectionArray[0];
-//    if (sectionToDelete->next != nullptr)
-//        sectionToDelete->next->prev = sectionToDelete->prev;
-//    if (sectionToDelete->prev == nullptr) {
-//        deleteList<selector>(&(sectionToDelete->selectorList));
-//        deleteList<attribute>(&(sectionToDelete->attributeList));
-//        return sectionToDelete->next;
-//    }
-//    sectionToDelete->prev->next = sectionToDelete->next;
-//    deleteList<selector>(&(sectionToDelete->selectorList));
-//    deleteList<attribute>(&(sectionToDelete->attributeList));
-//    return blocks->sectionArray[0];
-//}
+attribute *removeAttributeNode(block *blocks, section *section, attribute *attributeToDelete) {
+    if (attributeToDelete == nullptr)
+        return section->attributeList;
+    if (attributeToDelete->next != nullptr)
+        attributeToDelete->next->prev = attributeToDelete->prev;
+    if (attributeToDelete->prev == nullptr) {
+        memset(attributeToDelete->attributeName, '\0', INPUT_SIZE);
+        memset(attributeToDelete->attributeValue, '\0', INPUT_SIZE);
+        return attributeToDelete->next;
+    }
+//    memset(attributeToDelete->attributeName, '\0', INPUT_SIZE);
+//    memset(attributeToDelete->attributeValue, '\0', INPUT_SIZE);
+    attributeToDelete->prev->next = attributeToDelete->next;
+    return section->attributeList;
+}
 
 block *removeLastBlockNode(block *blocks) {
     block *lastBlock = getLast<block>(blocks);

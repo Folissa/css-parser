@@ -177,7 +177,10 @@ template <typename type> type removeFirst(type *firstNode);
 template <typename type> type *removeNode(type *firstNode, type *node);
 
 //
-section *removeSectionNode(block *blocks, section *sectionToDelete);
+section *removeSectionNode(section *sections, section *sectionToDelete);
+
+//
+attribute *removeAttributeNode(block *blocks, section *section, attribute *attributeToDelete);
 
 //
 block *removeLastBlockNode(block *blocks);
