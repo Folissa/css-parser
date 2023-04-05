@@ -6,7 +6,7 @@
 #include <stdlib.h>
 
 #define SECTIONS_PER_BLOCK 8
-#define INPUT_SIZE 512
+#define INPUT_SIZE 1024
 #define DATA_SIZE 1048576
 #define COMMAND_SIZE 3
 
@@ -84,19 +84,16 @@ void appendToBuffer(const char *input, char *data, int *sizeOfData, int *current
 //
 void appendCommand(const char *input, char *command, int *currentIndex);
 
-//
-void printString(char *data);
-
 // DATA PARSING RELATED METHODS
 
 //
 int countCommandSeparators(const char *input);
 
 //
-section *parseSelectors(block *blocks, char *data, int *currentIndex, section *sections);
+section *parseSelectors(char *data, int *currentIndex, section *sections);
 
 //
-section *parseAttributes(block *blocks, char *data, int *currentIndex, section *sections);
+section *parseAttributes(char *data, int *currentIndex, section *sections);
 
 //
 void parseCommand(const char *input, char commandParts[][INPUT_SIZE]);
@@ -117,9 +114,6 @@ int countAttributes(const char *data, int currentIndex);
 char *getAttributeValueBySelector(section *sections, const char *selectorToFind, const char *attributeToFind);
 
 // LIST RELATED METHODS
-
-//
-char *getAttributeValue(section *searchedSection, const char *attributeToFind);
 
 //
 attribute *getAttribute(section *searchedSection, const char *attributeToFind);
@@ -154,26 +148,8 @@ selector *createSelectorNode();
 //
 attribute *createAttributeNode();
 
-// Prints the data of all the nodes in the list.
-template <typename type> void printList(type *firstNode);
-
-//
-void printBlocks(block *blocks);
-
-//
-void printSections(section *sections);
-
-//
-void printSelectors(selector *selectors);
-
-//
-void printAttributes(attribute *attributes);
-
 // Returns the length of a list.
 template <typename type> int getListLength(type *firstNode);
-
-// Returns the first node of a list.
-template <typename type> type getFirst(type *firstNode);
 
 // Returns the node at a specific location of a list.
 template <typename type> type *getAtPosition(type *firstNode, int position);
@@ -182,40 +158,16 @@ template <typename type> type *getAtPosition(type *firstNode, int position);
 template <typename type> type *getLast(type *firstNode);
 
 //
-template <typename type> type addFirst(type *firstNode, type *newNode);
-
-//
-template <typename type> type insertBefore(type *firstNode, type *newNode, type *node);
-
-//
-template <typename type> void insertAfter(type *newNode, type *node);
-
-//
 template <typename type> type *addLast(type *firstNode, type *newNode);
-
-//
-template <typename type> type removeFirst(type *firstNode);
-
-//
-template <typename type> type *removeNode(type *firstNode, type *node);
 
 //
 section *removeSectionNode(section *sections, section *sectionToDelete);
 
 //
-attribute *removeAttributeNode(block *blocks, section *section, attribute *attributeToDelete);
-
-//
-selector *removeSelectorNode(block *blocks, section *section, selector *selectorToDelete);
+attribute *removeAttributeNode(section *section, attribute *attributeToDelete);
 
 //
 block *removeLastBlockNode(block *blocks);
-
-//
-template <typename type> void removeAfter(type *node);
-
-//
-template <typename type> type removeLast(type *firstNode);
 
 //
 template <typename type> void deleteList(type **headReference);
