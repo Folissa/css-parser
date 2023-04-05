@@ -82,6 +82,9 @@ void freeData(char *data, int *length);
 void appendToBuffer(const char *input, char *data, int *sizeOfData, int *currentIndex);
 
 //
+void appendCommand(const char *input, char *command, int *currentIndex);
+
+//
 void printString(char *data);
 
 // DATA PARSING RELATED METHODS

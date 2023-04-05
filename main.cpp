@@ -5,12 +5,18 @@ using namespace std;
 
 int main() {
     char input[INPUT_SIZE];
+
     char *data = (char *) malloc(DATA_SIZE * sizeof(char));
     memset(data, '\0', DATA_SIZE);
-    int sizeOfData = 0, currentIndex = 0, appendingAllowed = 1, parseData = 0;
+    char *command = (char *) malloc(INPUT_SIZE * sizeof(char));
+    memset(command, '\0', INPUT_SIZE);
+
+    int sizeOfData = 0, currentIndex = 0, currentCommandIndex = 0, appendingAllowed = 1, parseData = 0;
+
     block *blocks = nullptr;
     blocks = addBlock(blocks);
     section *sections = nullptr;
+
     // Inputs until a whitespace.
     while (cin >> input) {
         // Check if we invoke the commands or input the data to the buffer.
@@ -32,141 +38,152 @@ int main() {
                 // After we parse all data into according data structures we can erase the data buffer.
                 freeData(data, &currentIndex);
             }
-            // Invoke the commands.
-            if (strcmp(input, "?") == 0) {
+
+            // Append command.
+            appendCommand(input, command, &currentCommandIndex);
+
+            if (strcmp(trimSpaces(command), "?") == 0) {
+                freeData(command, &currentCommandIndex);
                 cout << "? == " << getListLength<section>(sections) << endl;
+                continue;
+            }
+
+            char commandParts[COMMAND_SIZE][INPUT_SIZE];
+            int commandSize = countCommandSeparators(command);
+            if (commandSize < 2)
+                continue;
+            else if (commandSize == 2) {
+                // Parse the command.
+                parseCommand(trimSpaces(command), commandParts);
             }
             else {
-                // Parse the command.
-                char commandParts[COMMAND_SIZE][INPUT_SIZE];
-                if (countCommandSeparators(input) == 2)
-                    parseCommand(input, commandParts);
-
-                // Then invoke it.
-                if (strcmp(commandParts[SECOND_PART], "S") == 0) {
-                    if (intOrString(commandParts[FIRST_PART]) == INT && strcmp(commandParts[THIRD_PART], "?") == 0) {
-                        int sectionNumber = atoi(commandParts[FIRST_PART]) - 1;
-                        section *requestedSection;
-                        requestedSection = getAtPosition<section>(sections, sectionNumber);
-                        if (requestedSection != nullptr) {
-                            cout << commandParts[FIRST_PART] << ",S,? == " << getListLength<selector>(requestedSection->selectorList) << endl;
-                        }
-                        else
-                            continue;
+                freeData(command, &currentCommandIndex);
+                continue;
+            }
+            freeData(command, &currentCommandIndex);
+            if (strcmp(commandParts[SECOND_PART], "S") == 0) {
+                if (intOrString(commandParts[FIRST_PART]) == INT && strcmp(commandParts[THIRD_PART], "?") == 0) {
+                    int sectionNumber = atoi(commandParts[FIRST_PART]) - 1;
+                    section *requestedSection;
+                    requestedSection = getAtPosition<section>(sections, sectionNumber);
+                    if (requestedSection != nullptr) {
+                        cout << commandParts[FIRST_PART] << ",S,? == " << getListLength<selector>(requestedSection->selectorList) << endl;
                     }
-                    else if (intOrString(commandParts[FIRST_PART]) == INT && intOrString(commandParts[THIRD_PART]) == INT) {
-                        int sectionNumber = atoi(commandParts[FIRST_PART]) - 1;
-                        int selectorNumber = atoi(commandParts[THIRD_PART]) - 1;
-                        section *requestedSection;
-                        selector *requestedSelector;
-                        requestedSection = getAtPosition<section>(sections, sectionNumber);
-                        if (requestedSection != nullptr)
-                            requestedSelector = getAtPosition<selector>(requestedSection->selectorList, selectorNumber);
-                        else
-                            continue;
-                        if (requestedSelector != nullptr)
-                            cout << commandParts[FIRST_PART] << ",S," << commandParts[THIRD_PART] << " == " << requestedSelector->selectorName << endl;
-                        else
-                            continue;
+                    else
+                        continue;
+                }
+                else if (intOrString(commandParts[FIRST_PART]) == INT && intOrString(commandParts[THIRD_PART]) == INT) {
+                    int sectionNumber = atoi(commandParts[FIRST_PART]) - 1;
+                    int selectorNumber = atoi(commandParts[THIRD_PART]) - 1;
+                    section *requestedSection;
+                    selector *requestedSelector;
+                    requestedSection = getAtPosition<section>(sections, sectionNumber);
+                    if (requestedSection != nullptr)
+                        requestedSelector = getAtPosition<selector>(requestedSection->selectorList, selectorNumber);
+                    else
+                        continue;
+                    if (requestedSelector != nullptr)
+                        cout << commandParts[FIRST_PART] << ",S," << commandParts[THIRD_PART] << " == " << requestedSelector->selectorName << endl;
+                    else
+                        continue;
+                }
+                // TODO: Error here:
+                else if (intOrString(commandParts[FIRST_PART]) == STRING && strcmp(commandParts[THIRD_PART], "?") == 0) {
+                    cout << commandParts[FIRST_PART] << ",S,? == " << selectorCounter(sections, commandParts[FIRST_PART]) << endl;
+                }
+            }
+            else if (strcmp(commandParts[SECOND_PART], "A") == 0) {
+                if (intOrString(commandParts[FIRST_PART]) == INT && strcmp(commandParts[THIRD_PART], "?") == 0) {
+                    int sectionNumber = atoi(commandParts[FIRST_PART]) - 1;
+                    section *requestedSection;
+                    requestedSection = getAtPosition<section>(sections, sectionNumber);
+                    if (requestedSection != nullptr)
+                        cout << commandParts[FIRST_PART] << ",A,? == " << getListLength<attribute>(requestedSection->attributeList) << endl;
+                    else
+                        continue;
+                }
+                else if (intOrString(commandParts[FIRST_PART]) == INT && intOrString(commandParts[THIRD_PART]) == STRING) {
+                    int sectionNumber = atoi(commandParts[FIRST_PART]) - 1;
+                    section *requestedSection;
+                    requestedSection = getAtPosition<section>(sections, sectionNumber);
+                    attribute *requestedAttribute;
+                    if (requestedSection != nullptr) {
+                        requestedAttribute = getAttribute(requestedSection, commandParts[THIRD_PART]);
                     }
-                        // TODO: Error here:
-                    else if (intOrString(commandParts[FIRST_PART]) == STRING && strcmp(commandParts[THIRD_PART], "?") == 0) {
-                        cout << commandParts[FIRST_PART] << ",S,? == " << selectorCounter(sections, commandParts[FIRST_PART]) << endl;
+                    else
+                        continue;
+                    if (requestedAttribute != nullptr)
+                        cout << commandParts[FIRST_PART] << ",A," << commandParts[THIRD_PART] << " == " << requestedAttribute->attributeValue << endl;
+                    else
+                        continue;
+                }
+                else if (intOrString(commandParts[FIRST_PART]) == STRING && strcmp(commandParts[THIRD_PART], "?") == 0) {
+                    cout << commandParts[FIRST_PART] << ",A,? == " << attributeCounter(sections,commandParts[FIRST_PART]) << endl;
+                }
+            }
+            else if (strcmp(commandParts[SECOND_PART], "D") == 0) {
+                // TODO: Error here:
+                if (intOrString(commandParts[FIRST_PART]) == INT && strcmp(commandParts[THIRD_PART], "*") == 0) {
+                    int sectionNumber = atoi(commandParts[FIRST_PART]) - 1;
+                    section *requestedSection;
+                    requestedSection = getAtPosition<section>(sections, sectionNumber);
+                    int sectionsLengthBefore = getListLength<section>(sections);
+                    sections = removeSectionNode(sections, requestedSection);
+                    int sectionsLengthAfter = getListLength<section>(sections);
+                    if (sectionsLengthBefore == sectionsLengthAfter) {
+                        continue;
+                    }
+                    else {
+                        blocks->takenSections--;
+                        removeLastBlockNode(blocks);
+                        cout << commandParts[FIRST_PART] << ",D,* == deleted" << endl;
                     }
                 }
-                else if (strcmp(commandParts[SECOND_PART], "A") == 0) {
-                    if (intOrString(commandParts[FIRST_PART]) == INT && strcmp(commandParts[THIRD_PART], "?") == 0) {
-                        int sectionNumber = atoi(commandParts[FIRST_PART]) - 1;
-                        section *requestedSection;
-                        requestedSection = getAtPosition<section>(sections, sectionNumber);
-                        if (requestedSection != nullptr)
-                            cout << commandParts[FIRST_PART] << ",A,? == " << getListLength<attribute>(requestedSection->attributeList) << endl;
-                        else
-                            continue;
+                else if (intOrString(commandParts[FIRST_PART]) == INT && intOrString(commandParts[THIRD_PART]) == STRING) {
+                    int sectionNumber = atoi(commandParts[FIRST_PART]) - 1;
+                    section *requestedSection;
+                    requestedSection = getAtPosition<section>(sections, sectionNumber);
+                    attribute *requestedAttribute;
+                    if (requestedSection != nullptr) {
+                        requestedAttribute = getAttribute(requestedSection, commandParts[THIRD_PART]);
                     }
-                    else if (intOrString(commandParts[FIRST_PART]) == INT && intOrString(commandParts[THIRD_PART]) == STRING) {
-                        int sectionNumber = atoi(commandParts[FIRST_PART]) - 1;
-                        section *requestedSection;
-                        requestedSection = getAtPosition<section>(sections, sectionNumber);
-                        attribute *requestedAttribute;
-                        if (requestedSection != nullptr) {
-                            requestedAttribute = getAttribute(requestedSection, commandParts[THIRD_PART]);
-                        }
-                        else
-                            continue;
-                        if (requestedAttribute != nullptr)
-                            cout << commandParts[FIRST_PART] << ",A," << commandParts[THIRD_PART] << " == " << requestedAttribute->attributeValue << endl;
-                        else
-                            continue;
-                    }
-                    else if (intOrString(commandParts[FIRST_PART]) == STRING && strcmp(commandParts[THIRD_PART], "?") == 0) {
-                        cout << commandParts[FIRST_PART] << ",A,? == " << attributeCounter(sections,commandParts[FIRST_PART]) << endl;
-                    }
-                }
-                else if (strcmp(commandParts[SECOND_PART], "D") == 0) {
-                    // TODO: Error here:
-                    if (intOrString(commandParts[FIRST_PART]) == INT && strcmp(commandParts[THIRD_PART], "*") == 0) {
-                        int sectionNumber = atoi(commandParts[FIRST_PART]) - 1;
-                        section *requestedSection;
-                        requestedSection = getAtPosition<section>(sections, sectionNumber);
-                        int sectionsLengthBefore = getListLength<section>(sections);
-                        sections = removeSectionNode(sections, requestedSection);
-                        int sectionsLengthAfter = getListLength<section>(sections);
-                        if (sectionsLengthBefore == sectionsLengthAfter) {
+                    else
+                        continue;
+                    if (requestedAttribute != nullptr) {
+                        int attributeListLengthBefore = getListLength<attribute>(requestedSection->attributeList);
+                        requestedSection->attributeList = removeAttributeNode(blocks, requestedSection, requestedAttribute);
+                        int attributeListLengthAfter = getListLength<attribute>(requestedSection->attributeList);
+                        if (attributeListLengthBefore == attributeListLengthAfter) {
                             continue;
                         }
                         else {
-                            blocks->takenSections--;
-                            removeLastBlockNode(blocks);
-                            cout << commandParts[FIRST_PART] << ",D,* == deleted" << endl;
-                        }
-                    }
-                    else if (intOrString(commandParts[FIRST_PART]) == INT && intOrString(commandParts[THIRD_PART]) == STRING) {
-                        int sectionNumber = atoi(commandParts[FIRST_PART]) - 1;
-                        section *requestedSection;
-                        requestedSection = getAtPosition<section>(sections, sectionNumber);
-                        attribute *requestedAttribute;
-                        if (requestedSection != nullptr) {
-                            requestedAttribute = getAttribute(requestedSection, commandParts[THIRD_PART]);
-                        }
-                        else
-                            continue;
-                        if (requestedAttribute != nullptr) {
-                            int attributeListLengthBefore = getListLength<attribute>(requestedSection->attributeList);
-                            requestedSection->attributeList = removeAttributeNode(blocks, requestedSection, requestedAttribute);
-                            int attributeListLengthAfter = getListLength<attribute>(requestedSection->attributeList);
-                            if (attributeListLengthBefore == attributeListLengthAfter) {
-                                continue;
-                            }
-                            else {
-                                if (requestedSection->attributeList == nullptr) {
-                                    int sectionsLengthBefore = getListLength<section>(sections);
-                                    sections = removeSectionNode(sections, requestedSection);
-                                    int sectionsLengthAfter = getListLength<section>(sections);
-                                    if (sectionsLengthAfter == sectionsLengthBefore) {
-                                        continue;
-                                    }
-                                    else {
-                                        blocks->takenSections--;
-                                        removeLastBlockNode(blocks);
-                                    }
+                            if (requestedSection->attributeList == nullptr) {
+                                int sectionsLengthBefore = getListLength<section>(sections);
+                                sections = removeSectionNode(sections, requestedSection);
+                                int sectionsLengthAfter = getListLength<section>(sections);
+                                if (sectionsLengthAfter == sectionsLengthBefore) {
+                                    continue;
                                 }
-                                cout << commandParts[FIRST_PART] << ",D," << commandParts[THIRD_PART] << " == deleted" << endl;
+                                else {
+                                    blocks->takenSections--;
+                                    removeLastBlockNode(blocks);
+                                }
                             }
+                            cout << commandParts[FIRST_PART] << ",D," << commandParts[THIRD_PART] << " == deleted" << endl;
                         }
-                        else
-                            continue;
                     }
-                }
-                else if (strcmp(commandParts[SECOND_PART], "E") == 0) {
-                    char attributeValue[INPUT_SIZE];
-                    if (getAttributeValueBySelector(sections, commandParts[FIRST_PART], commandParts[THIRD_PART]) != nullptr)
-                        strcpy(attributeValue, getAttributeValueBySelector(sections, commandParts[FIRST_PART], commandParts[THIRD_PART]));
                     else
                         continue;
-                    if (getAttributeValueBySelector(sections, commandParts[FIRST_PART], commandParts[THIRD_PART]) != nullptr)
-                        cout << commandParts[FIRST_PART] << ",E," << commandParts[THIRD_PART] << " == " << attributeValue << endl;
                 }
+            }
+            else if (strcmp(commandParts[SECOND_PART], "E") == 0) {
+                char attributeValue[INPUT_SIZE];
+                if (getAttributeValueBySelector(sections, commandParts[FIRST_PART], commandParts[THIRD_PART]) != nullptr)
+                    strcpy(attributeValue, getAttributeValueBySelector(sections, commandParts[FIRST_PART], commandParts[THIRD_PART]));
+                else
+                    continue;
+                if (getAttributeValueBySelector(sections, commandParts[FIRST_PART], commandParts[THIRD_PART]) != nullptr)
+                    cout << commandParts[FIRST_PART] << ",E," << commandParts[THIRD_PART] << " == " << attributeValue << endl;
             }
         }
             // Append the data for parsing.
@@ -179,6 +196,7 @@ int main() {
     deleteList<section>(&sections);
     deleteList<block>(&blocks);
     free(data);
+    free(command);
 
     return 0;
 }
@@ -230,6 +248,19 @@ void appendToBuffer(const char *input, char *data, int *sizeOfData, int *current
     }
     data[*currentIndex] = ' ';
     (*currentIndex) ++;
+}
+
+void appendCommand(const char *input, char *command, int *currentIndex) {
+    int j = 0;
+    if (*currentIndex - 1 > 0 && command[*currentIndex - 1] != ',') {
+        command[*currentIndex] = ' ';
+        (*currentIndex) ++;
+    }
+    while (input[j] != '\0') {
+        command[*currentIndex] = input[j];
+        (*currentIndex)++;
+        j++;
+    }
 }
 
 void printString(char *data) {
@@ -328,12 +359,6 @@ section *parseSelectors(block *blocks, char *data, int *currentIndex, section *s
             // TODO: Optimize this.
             selector *existingSelector;
             existingSelector = getSelector(lastSection, selectorNameTrimmed);
-//            if (existingSelector != nullptr) {
-//                lastSection->selectorList = removeSelectorNode(blocks, lastSection, existingSelector);
-//                strcpy(newSelector->selectorName, selectorNameTrimmed);
-//                lastSection->selectorList = addLast<selector>(lastSection->selectorList, newSelector);
-//                continue;
-//            }
             if (existingSelector == nullptr) {
                 strcpy(newSelector->selectorName, selectorNameTrimmed);
                 lastSection->selectorList = addLast<selector>(lastSection->selectorList, newSelector);
@@ -802,8 +827,7 @@ selector *removeSelectorNode(block *blocks, section *section, selector *selector
     return section->selectorList;
 }
 
-
-    block *removeLastBlockNode(block *blocks) {
+block *removeLastBlockNode(block *blocks) {
     block *lastBlock = getLast<block>(blocks);
     if (lastBlock->takenSections == 0) {
         if (lastBlock == nullptr)
