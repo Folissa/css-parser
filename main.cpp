@@ -42,7 +42,8 @@ int main() {
             else {
                 // Parse the command.
                 char commandParts[COMMAND_SIZE][INPUT_SIZE];
-                parseCommand(input, commandParts);
+                if (countCommandSeparators(input) == 2)
+                    parseCommand(input, commandParts);
 
                 // Then invoke it.
                 if (strcmp(commandParts[SECOND_PART], "S") == 0) {
@@ -50,8 +51,9 @@ int main() {
                         int sectionNumber = atoi(commandParts[FIRST_PART]) - 1;
                         section *requestedSection;
                         requestedSection = getAtPosition<section>(sections, sectionNumber);
-                        if (requestedSection != nullptr)
+                        if (requestedSection != nullptr) {
                             cout << commandParts[FIRST_PART] << ",S,? == " << getListLength<selector>(requestedSection->selectorList) << endl;
+                        }
                         else
                             continue;
                     }
@@ -110,12 +112,17 @@ int main() {
                         int sectionNumber = atoi(commandParts[FIRST_PART]) - 1;
                         section *requestedSection;
                         requestedSection = getAtPosition<section>(sections, sectionNumber);
+                        int sectionsLengthBefore = getListLength<section>(sections);
                         sections = removeSectionNode(sections, requestedSection);
-                        // TODO: Not sure if it was deleted...
-                        blocks->takenSections--;
-                        removeLastBlockNode(blocks);
-                        // TODO: What if we don't delete it?
-                        cout << commandParts[FIRST_PART] << ",D,* == deleted" << endl;
+                        int sectionsLengthAfter = getListLength<section>(sections);
+                        if (sectionsLengthBefore == sectionsLengthAfter) {
+                            continue;
+                        }
+                        else {
+                            blocks->takenSections--;
+                            removeLastBlockNode(blocks);
+                            cout << commandParts[FIRST_PART] << ",D,* == deleted" << endl;
+                        }
                     }
                     else if (intOrString(commandParts[FIRST_PART]) == INT && intOrString(commandParts[THIRD_PART]) == STRING) {
                         int sectionNumber = atoi(commandParts[FIRST_PART]) - 1;
@@ -128,21 +135,41 @@ int main() {
                         else
                             continue;
                         if (requestedAttribute != nullptr) {
+                            int attributeListLengthBefore = getListLength<attribute>(requestedSection->attributeList);
                             requestedSection->attributeList = removeAttributeNode(blocks, requestedSection, requestedAttribute);
-                            if (requestedSection->attributeList == nullptr) {
-                                sections = removeSectionNode(sections, requestedSection);
-                                // TODO: Not sure if it was deleted...
-                                blocks->takenSections--;
-                                removeLastBlockNode(blocks);
+                            int attributeListLengthAfter = getListLength<attribute>(requestedSection->attributeList);
+                            if (attributeListLengthBefore == attributeListLengthAfter) {
+                                continue;
                             }
-                            cout << commandParts[FIRST_PART] << ",D," << commandParts[THIRD_PART] << " == deleted" << endl;
+                            else {
+                                if (requestedSection->attributeList == nullptr) {
+                                    int sectionsLengthBefore = getListLength<section>(sections);
+                                    sections = removeSectionNode(sections, requestedSection);
+                                    int sectionsLengthAfter = getListLength<section>(sections);
+                                    if (sectionsLengthAfter == sectionsLengthBefore) {
+                                        continue;
+                                    }
+                                    else {
+                                        blocks->takenSections--;
+                                        removeLastBlockNode(blocks);
+                                    }
+                                }
+                                cout << commandParts[FIRST_PART] << ",D," << commandParts[THIRD_PART] << " == deleted" << endl;
+                            }
                         }
                         else
                             continue;
                     }
                 }
-                else if (strcmp(commandParts[SECOND_PART], "E") == 0)
-                    cout << commandParts[FIRST_PART] << ",E," << commandParts[THIRD_PART] << " == " << getAttributeValueBySelector(sections, commandParts[FIRST_PART], commandParts[THIRD_PART]) << endl;
+                else if (strcmp(commandParts[SECOND_PART], "E") == 0) {
+                    char attributeValue[INPUT_SIZE];
+                    if (getAttributeValueBySelector(sections, commandParts[FIRST_PART], commandParts[THIRD_PART]) != nullptr)
+                        strcpy(attributeValue, getAttributeValueBySelector(sections, commandParts[FIRST_PART], commandParts[THIRD_PART]));
+                    else
+                        continue;
+                    if (getAttributeValueBySelector(sections, commandParts[FIRST_PART], commandParts[THIRD_PART]) != nullptr)
+                        cout << commandParts[FIRST_PART] << ",E," << commandParts[THIRD_PART] << " == " << attributeValue << endl;
+                }
             }
         }
             // Append the data for parsing.
@@ -218,6 +245,17 @@ void printString(char *data) {
 
 // DATA PARSING RELATED METHODS
 
+int countCommandSeparators(const char *input) {
+    const char separator = ',';
+    int i = 0, count = 0;
+    while (input[i] != '\0') {
+        if (input[i] == separator)
+            count++;
+        i++;
+    }
+    return count;
+}
+
 void parseCommand(const char *input, char commandParts[][INPUT_SIZE]) {
     const char separator = ',';
     int commandIndex = 0;
@@ -236,13 +274,15 @@ void parseCommand(const char *input, char commandParts[][INPUT_SIZE]) {
 }
 
 int isGlobalAttribute(const char *data, int currentIndex) {
-    while (data[currentIndex] != '{' && data[currentIndex] != ';') {
-        currentIndex++;
-    }
     if (data[currentIndex] == '{')
-        return 0;
-    else if (data[currentIndex] == ';')
         return 1;
+//    while (data[currentIndex] != '{' && data[currentIndex] != ';') {
+//        currentIndex++;
+//    }
+//    if (data[currentIndex] == '{')
+//        return 0;
+//    else if (data[currentIndex] == ';')
+//        return 1;
     return 0;
 }
 
@@ -255,7 +295,7 @@ section *dataParser(char *data, block *blocks, section *sections) {
             sections = addSection(blocks, sections);
             sections = parseAttributes(blocks, data, &currentIndex, sections);
         }
-        // Logic for a section.
+            // Logic for a section.
         else {
             sections = addSection(blocks, sections);
             sections = parseSelectors(data, &currentIndex, sections);
@@ -295,9 +335,19 @@ section *parseSelectors(char *data, int *currentIndex, section *sections) {
         else {
             selector *newSelector;
             newSelector = createSelectorNode();
-
-            strcpy(newSelector->selectorName, selectorNameTrimmed);
-            lastSection->selectorList = addLast<selector>(lastSection->selectorList, newSelector);
+            // TODO: Optimize this.
+            selector *existingSelector;
+//            existingSelector = getSelector(lastSection, selectorNameTrimmed);
+//            if (existingSelector != nullptr) {
+//                lastSection->selectorList = removeSelectorNode(blocks, lastSection, existingSelector);
+//                strcpy(newSelector->selectorName, selectorNameTrimmed);
+//                lastSection->selectorList = addLast<selector>(lastSection->selectorList, newSelector);
+//                continue;
+//            }
+//            else {
+                strcpy(newSelector->selectorName, selectorNameTrimmed);
+                lastSection->selectorList = addLast<selector>(lastSection->selectorList, newSelector);
+//            }
         }
         // Skip ',' or '{'.
         (*currentIndex)++;
@@ -316,6 +366,8 @@ section *parseAttributes(block *blocks, char *data, int *currentIndex, section *
             j++;
         }
         attributeName[j] = '\0';
+        char attributeNameTrimmed[INPUT_SIZE];
+        strcpy(attributeNameTrimmed, trimSpaces(attributeName));
         // Skip ':'.
         (*currentIndex)++;
         char attributeValue[INPUT_SIZE];
@@ -326,6 +378,8 @@ section *parseAttributes(block *blocks, char *data, int *currentIndex, section *
             k++;
         }
         attributeValue[k] = '\0';
+        char attributeValueTrimmed[INPUT_SIZE];
+        strcpy(attributeValueTrimmed, trimSpaces(attributeValue));
         // Add attribute name and value to the list.
 
         section *lastSection;
@@ -334,24 +388,24 @@ section *parseAttributes(block *blocks, char *data, int *currentIndex, section *
             attribute *attributes;
             attributes = createAttributeNode();
             lastSection->attributeList = attributes;
-            strcpy(lastSection->attributeList->attributeName, trimSpaces(attributeName));
-            strcpy(lastSection->attributeList->attributeValue, trimSpaces(attributeValue));
+            strcpy(lastSection->attributeList->attributeName, attributeNameTrimmed);
+            strcpy(lastSection->attributeList->attributeValue, attributeValueTrimmed);
         }
         else {
             attribute *newAttribute;
             newAttribute = createAttributeNode();
             // TODO: Optimize this.
             attribute *existingAttribute;
-            existingAttribute = getAttribute(lastSection, trimSpaces(attributeName));
+            existingAttribute = getAttribute(lastSection, attributeNameTrimmed);
             if (existingAttribute != nullptr) {
                 lastSection->attributeList = removeAttributeNode(blocks, lastSection, existingAttribute);
-                strcpy(newAttribute->attributeName, trimSpaces(attributeName));
-                strcpy(newAttribute->attributeValue, trimSpaces(attributeValue));
+                strcpy(newAttribute->attributeName, attributeNameTrimmed);
+                strcpy(newAttribute->attributeValue, attributeValueTrimmed);
                 lastSection->attributeList = addLast<attribute>(lastSection->attributeList, newAttribute);
             }
             else {
-                strcpy(newAttribute->attributeName, trimSpaces(attributeName));
-                strcpy(newAttribute->attributeValue, trimSpaces(attributeValue));
+                strcpy(newAttribute->attributeName, attributeNameTrimmed);
+                strcpy(newAttribute->attributeValue, attributeValueTrimmed);
                 lastSection->attributeList = addLast<attribute>(lastSection->attributeList, newAttribute);
             }
         }
@@ -431,6 +485,18 @@ attribute *getAttribute(section *searchedSection, const char *attributeToFind) {
             return temporaryAttributeList;
         }
         temporaryAttributeList = temporaryAttributeList->next;
+    }
+    return nullptr;
+}
+
+selector *getSelector(section *searchedSection, const char *selectorToFind) {
+    section *temporary = searchedSection;
+    selector *temporarySelectorList = temporary->selectorList;
+    while (temporarySelectorList != nullptr) {
+        if (strcmp(temporarySelectorList->selectorName, selectorToFind) == 0) {
+            return temporarySelectorList;
+        }
+        temporarySelectorList = temporarySelectorList->next;
     }
     return nullptr;
 }
@@ -801,4 +867,3 @@ section *deleteSelectorsAttributes(section *sections) {
  *
  * NOTE: ASTERISKS ARE NODES OF RESPECTIVE LISTS
  */
-

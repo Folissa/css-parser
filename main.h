@@ -7,7 +7,7 @@
 
 #define SECTIONS_PER_BLOCK 8
 #define INPUT_SIZE 512
-#define DATA_SIZE 262144
+#define DATA_SIZE 1048576
 #define COMMAND_SIZE 3
 
 enum type {
@@ -74,6 +74,9 @@ void appendToBuffer(const char *input, char *data, int *sizeOfData, int *current
 void printString(char *data);
 
 // DATA PARSING RELATED METHODS
+
+//
+int countCommandSeparators(const char *input);
 
 //
 section *parseSelectors(char *data, int *currentIndex, section *sections);
