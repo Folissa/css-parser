@@ -3,9 +3,6 @@
 
 using namespace std;
 
-// TODO: Make sure there are no duplicates for attributes in sections.
-// TODO: Figure out global attributes.
-
 int main() {
     char input[INPUT_SIZE];
     char *data = (char *) malloc(DATA_SIZE * sizeof(char));
@@ -276,13 +273,6 @@ void parseCommand(const char *input, char commandParts[][INPUT_SIZE]) {
 int isGlobalAttribute(const char *data, int currentIndex) {
     if (data[currentIndex] == '{')
         return 1;
-//    while (data[currentIndex] != '{' && data[currentIndex] != ';') {
-//        currentIndex++;
-//    }
-//    if (data[currentIndex] == '{')
-//        return 0;
-//    else if (data[currentIndex] == ';')
-//        return 1;
     return 0;
 }
 
@@ -295,10 +285,10 @@ section *dataParser(char *data, block *blocks, section *sections) {
             sections = addSection(blocks, sections);
             sections = parseAttributes(blocks, data, &currentIndex, sections);
         }
-            // Logic for a section.
+        // Logic for a section.
         else {
             sections = addSection(blocks, sections);
-            sections = parseSelectors(data, &currentIndex, sections);
+            sections = parseSelectors(blocks, data, &currentIndex, sections);
             sections = parseAttributes(blocks, data, &currentIndex, sections);
         }
         currentIndex++;
@@ -306,7 +296,7 @@ section *dataParser(char *data, block *blocks, section *sections) {
     return sections;
 }
 
-section *parseSelectors(char *data, int *currentIndex, section *sections) {
+section *parseSelectors(block *blocks, char *data, int *currentIndex, section *sections) {
     int selectorsCount = countSelectors(data, *currentIndex);
     for (int i = 0; i < selectorsCount; i++) {
         char selectorName[INPUT_SIZE];
@@ -337,17 +327,17 @@ section *parseSelectors(char *data, int *currentIndex, section *sections) {
             newSelector = createSelectorNode();
             // TODO: Optimize this.
             selector *existingSelector;
-//            existingSelector = getSelector(lastSection, selectorNameTrimmed);
+            existingSelector = getSelector(lastSection, selectorNameTrimmed);
 //            if (existingSelector != nullptr) {
 //                lastSection->selectorList = removeSelectorNode(blocks, lastSection, existingSelector);
 //                strcpy(newSelector->selectorName, selectorNameTrimmed);
 //                lastSection->selectorList = addLast<selector>(lastSection->selectorList, newSelector);
 //                continue;
 //            }
-//            else {
+            if (existingSelector == nullptr) {
                 strcpy(newSelector->selectorName, selectorNameTrimmed);
                 lastSection->selectorList = addLast<selector>(lastSection->selectorList, newSelector);
-//            }
+            }
         }
         // Skip ',' or '{'.
         (*currentIndex)++;
@@ -561,6 +551,7 @@ section *addSection(block *blocks, section *sections) {
             sections = createSection(lastBLock, sections);
         }
         else {
+            // TODO: Figure this out
             blocks = addBlock(blocks);
             block *newBlock;
             newBlock = lastBLock->next;
@@ -578,9 +569,6 @@ section *addSection(block *blocks, section *sections) {
 section *createSection(block *lastBlock, section *sections) {
     section *lastSection;
     lastSection = getLast<section>(sections);
-
-//    lastSection->selectorList = nullptr;
-//    lastSection->attributeList = nullptr;
 
     lastBlock->sectionArray[lastBlock->takenSections] = lastSection;
     lastBlock->takenSections++;
@@ -611,7 +599,6 @@ section *createSectionNode() {
     return newSection;
 }
 
-// TODO: Create one type for these two.
 selector *createSelectorNode() {
     selector *newSelector;
     newSelector = (selector *)malloc(sizeof(selector));
@@ -689,11 +676,11 @@ template <typename type> int getListLength(type *firstNode) {
     return length;
 }
 
-template <typename type> type getFirst(type *firstNode) {
-    if (firstNode == nullptr)
-        return nullptr;
-    return firstNode;
-}
+//template <typename type> type getFirst(type *firstNode) {
+//    if (firstNode == nullptr)
+//        return nullptr;
+//    return firstNode;
+//}
 
 template <typename type> type *getAtPosition(type *firstNode, int position) {
     type *temporary = firstNode;
@@ -715,35 +702,35 @@ template <typename type> type *getLast(type *firstNode) {
     return temporary;
 }
 
-template <typename type> type addFirst(type *firstNode, type *newNode) {
-    newNode->prev = nullptr;
-    newNode->next = firstNode;
-    if (firstNode != nullptr)
-        firstNode->prev = newNode;
-    return newNode;
-}
+//template <typename type> type addFirst(type *firstNode, type *newNode) {
+//    newNode->prev = nullptr;
+//    newNode->next = firstNode;
+//    if (firstNode != nullptr)
+//        firstNode->prev = newNode;
+//    return newNode;
+//}
 
-template <typename type> type insertBefore(type *firstNode, type *newNode, type *node) {
-    if (node == nullptr)
-        return firstNode;
-    newNode->next = node;
-    newNode->prev = node->prev;
-    node->prev = newNode;
-    if (newNode->prev == nullptr)
-        return newNode;
-    newNode->prev->next = newNode;
-    return firstNode;
-}
+//template <typename type> type insertBefore(type *firstNode, type *newNode, type *node) {
+//    if (node == nullptr)
+//        return firstNode;
+//    newNode->next = node;
+//    newNode->prev = node->prev;
+//    node->prev = newNode;
+//    if (newNode->prev == nullptr)
+//        return newNode;
+//    newNode->prev->next = newNode;
+//    return firstNode;
+//}
 
-template <typename type> void insertAfter(type *newNode, type *node) {
-    if (node == nullptr)
-        return;
-    newNode->next = node->next;
-    newNode->prev = node;
-    if (node->next != nullptr)
-        node->next->prev = newNode;
-    node->next = newNode;
-}
+//template <typename type> void insertAfter(type *newNode, type *node) {
+//    if (node == nullptr)
+//        return;
+//    newNode->next = node->next;
+//    newNode->prev = node;
+//    if (node->next != nullptr)
+//        node->next->prev = newNode;
+//    node->next = newNode;
+//}
 
 template <typename type> type *addLast(type *firstNode, type *newNode) {
     type *lastNode = getLast<type>(firstNode);
@@ -754,20 +741,20 @@ template <typename type> type *addLast(type *firstNode, type *newNode) {
     return firstNode;
 }
 
-template <typename type> type removeFirst(type *firstNode) {
-    return removeNode(firstNode, firstNode);
-}
+//template <typename type> type removeFirst(type *firstNode) {
+//    return removeNode(firstNode, firstNode);
+//}
 
-template <typename type> type removeNode(type *firstNode, type *node) {
-    if (node == nullptr)
-        return firstNode;
-    if (node->next != nullptr)
-        node->next->prev = node->prev;
-    if (node->prev == nullptr)
-        return node->next;
-    node->prev->next = node->next;
-    return firstNode;
-}
+//template <typename type> type removeNode(type *firstNode, type *node) {
+//    if (node == nullptr)
+//        return firstNode;
+//    if (node->next != nullptr)
+//        node->next->prev = node->prev;
+//    if (node->prev == nullptr)
+//        return node->next;
+//    node->prev->next = node->next;
+//    return firstNode;
+//}
 
 section *removeSectionNode(section *sections, section *sectionToDelete) {
     if (sectionToDelete == nullptr)
@@ -795,13 +782,28 @@ attribute *removeAttributeNode(block *blocks, section *section, attribute *attri
         memset(attributeToDelete->attributeValue, '\0', INPUT_SIZE);
         return attributeToDelete->next;
     }
-//    memset(attributeToDelete->attributeName, '\0', INPUT_SIZE);
-//    memset(attributeToDelete->attributeValue, '\0', INPUT_SIZE);
+    memset(attributeToDelete->attributeName, '\0', INPUT_SIZE);
+    memset(attributeToDelete->attributeValue, '\0', INPUT_SIZE);
     attributeToDelete->prev->next = attributeToDelete->next;
     return section->attributeList;
 }
 
-block *removeLastBlockNode(block *blocks) {
+selector *removeSelectorNode(block *blocks, section *section, selector *selectorToDelete) {
+    if (selectorToDelete == nullptr)
+        return section->selectorList;
+    if (selectorToDelete->next != nullptr)
+        selectorToDelete->next->prev = selectorToDelete->prev;
+    if (selectorToDelete->prev == nullptr) {
+        memset(selectorToDelete->selectorName, '\0', INPUT_SIZE);
+        return selectorToDelete->next;
+    }
+    memset(selectorToDelete->selectorName, '\0', INPUT_SIZE);
+    selectorToDelete->prev->next = selectorToDelete->next;
+    return section->selectorList;
+}
+
+
+    block *removeLastBlockNode(block *blocks) {
     block *lastBlock = getLast<block>(blocks);
     if (lastBlock->takenSections == 0) {
         if (lastBlock == nullptr)
@@ -816,20 +818,20 @@ block *removeLastBlockNode(block *blocks) {
     return blocks;
 }
 
-template <typename type> void removeAfter(type *node) {
-    if (node == nullptr)
-        return;
-    if (node->next == nullptr)
-        return;
-    node->next = node->next->next;
-    if (node->next != nullptr)
-        node->next->prev = node;
-}
-
-template <typename type> type removeLast(type *firstNode) {
-    type *lastNode = getLast(firstNode);
-    return removeNode(firstNode, lastNode);
-}
+//template <typename type> void removeAfter(type *node) {
+//    if (node == nullptr)
+//        return;
+//    if (node->next == nullptr)
+//        return;
+//    node->next = node->next->next;
+//    if (node->next != nullptr)
+//        node->next->prev = node;
+//}
+//
+//template <typename type> type removeLast(type *firstNode) {
+//    type *lastNode = getLast(firstNode);
+//    return removeNode(firstNode, lastNode);
+//}
 
 template <typename type> void deleteList(type **headReference) {
     // https://www.geeksforgeeks.org/write-a-function-to-delete-a-linked-list/
@@ -856,14 +858,3 @@ section *deleteSelectorsAttributes(section *sections) {
     }
     return sections;
 }
-
-/*
- * BLOCKS                     * ----------------- *
- *                            |                   |
- * SECTIONS                   [ * , * , * , * ] - [ * , * , * , * ]
- *                             | | | | | | | |     | | | | | | | |
- * SELECTORS                   * | * | * | * |     * | * | * | * |
- * ATTRIBUTES                    * - * - * - *       * - * - * - *
- *
- * NOTE: ASTERISKS ARE NODES OF RESPECTIVE LISTS
- */
