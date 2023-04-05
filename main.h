@@ -7,7 +7,7 @@
 
 #define SECTIONS_PER_BLOCK 8
 #define INPUT_SIZE 512
-#define DATA_SIZE 1048576
+#define DATA_SIZE 262144
 #define COMMAND_SIZE 3
 
 enum type {
@@ -71,18 +71,12 @@ void freeData(char *data, int *length);
 void appendToBuffer(const char *input, char *data, int *sizeOfData, int *currentIndex);
 
 //
-void appendCommand(const char *input, char *command, int *currentIndex);
-
-//
 void printString(char *data);
 
 // DATA PARSING RELATED METHODS
 
 //
-int countCommandSeparators(const char *input);
-
-//
-section *parseSelectors(block *blocks, char *data, int *currentIndex, section *sections);
+section *parseSelectors(char *data, int *currentIndex, section *sections);
 
 //
 section *parseAttributes(block *blocks, char *data, int *currentIndex, section *sections);
@@ -112,9 +106,6 @@ char *getAttributeValue(section *searchedSection, const char *attributeToFind);
 
 //
 attribute *getAttribute(section *searchedSection, const char *attributeToFind);
-
-//
-selector *getSelector(section *searchedSection, const char *selectorToFind);
 
 //
 int attributeCounter(section *sections, const char *attributeToCount);
@@ -193,9 +184,6 @@ section *removeSectionNode(section *sections, section *sectionToDelete);
 
 //
 attribute *removeAttributeNode(block *blocks, section *section, attribute *attributeToDelete);
-
-//
-selector *removeSelectorNode(block *blocks, section *section, selector *selectorToDelete);
 
 //
 block *removeLastBlockNode(block *blocks);
