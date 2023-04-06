@@ -136,6 +136,12 @@ int main() {
                     else {
                         int blockNumber = sectionNumber / SECTIONS_PER_BLOCK;
                         block *blockToDelete = getAtPosition<block>(blocks, blockNumber);
+                        for (int i = 0; i < SECTIONS_PER_BLOCK; i++) {
+                            if (blockToDelete->sectionArray[i] == requestedSection) {
+                                blockToDelete->sectionArray[i] = nullptr;
+                                break;
+                            }
+                        }
                         blockToDelete->takenSections--;
 //                        if (blockToDelete->takenSections == 0)
 //                            blocks = removeBlockNode(blocks, blockToDelete);
@@ -170,6 +176,12 @@ int main() {
                                 else {
                                     int blockNumber = sectionNumber / SECTIONS_PER_BLOCK;
                                     block *blockToDelete = getAtPosition<block>(blocks, blockNumber);
+                                    for (int i = 0; i < SECTIONS_PER_BLOCK; i++) {
+                                        if (blockToDelete->sectionArray[i] == requestedSection) {
+                                            blockToDelete->sectionArray[i] = nullptr;
+                                            break;
+                                        }
+                                    }
                                     blockToDelete->takenSections--;
 //                                    if (blockToDelete->takenSections == 0)
 //                                        blocks = removeBlockNode(blocks, blockToDelete);
