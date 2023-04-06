@@ -134,8 +134,11 @@ int main() {
                         continue;
                     }
                     else {
-                        blocks->takenSections--;
-                        removeLastBlockNode(blocks);
+                        int blockNumber = sectionNumber / SECTIONS_PER_BLOCK;
+                        block *blockToDelete = getAtPosition<block>(blocks, blockNumber);
+                        blockToDelete->takenSections--;
+//                        if (blockToDelete->takenSections == 0)
+//                            blocks = removeBlockNode(blocks, blockToDelete);
                         cout << commandParts[FIRST_PART] << ",D,* == deleted" << endl;
                     }
                 }
@@ -165,8 +168,11 @@ int main() {
                                     continue;
                                 }
                                 else {
-                                    blocks->takenSections--;
-                                    removeLastBlockNode(blocks);
+                                    int blockNumber = sectionNumber / SECTIONS_PER_BLOCK;
+                                    block *blockToDelete = getAtPosition<block>(blocks, blockNumber);
+                                    blockToDelete->takenSections--;
+//                                    if (blockToDelete->takenSections == 0)
+//                                        blocks = removeBlockNode(blocks, blockToDelete);
                                 }
                             }
                             cout << commandParts[FIRST_PART] << ",D," << commandParts[THIRD_PART] << " == deleted" << endl;
@@ -190,7 +196,6 @@ int main() {
         else
             appendToBuffer(input, data, &sizeOfData, &currentIndex);
     }
-
     // Free the allocated memory.
     sections = deleteSelectorsAttributes(sections);
     deleteList<section>(&sections);
@@ -449,6 +454,50 @@ int countAttributes(const char *data, int currentIndex) {
 
 // LIST RELATED METHODS
 
+template <typename type> void printList(type *firstNode) {
+    type *temporary = firstNode;
+    while (temporary != nullptr) {
+        cout << temporary->data;
+        temporary = temporary->next;
+    }
+}
+
+void printBlocks(block *blocks) {
+    block *temporary = blocks;
+    while (temporary != nullptr) {
+        cout << "BLOCK" << endl;
+        cout << "Taken sections: " << temporary->takenSections << endl;
+        temporary = temporary->next;
+    }
+}
+
+void printSections(section *sections) {
+    section *temporary = sections;
+    while (temporary != nullptr) {
+        cout << "SECTION" << endl;
+        printSelectors(temporary->selectorList);
+        printAttributes(temporary->attributeList);
+        temporary = temporary->next;
+    }
+}
+
+void printSelectors(selector *selectors) {
+    selector *temporary = selectors;
+    while (temporary != nullptr) {
+        cout << "Selector:" << temporary->selectorName << endl;
+        temporary = temporary->next;
+    }
+}
+
+void printAttributes(attribute *attributes) {
+    attribute *temporary = attributes;
+    while (temporary != nullptr) {
+        cout << "Attribute:" << temporary->attributeName << endl;
+        cout << "Value:" << temporary->attributeValue << endl;
+        temporary = temporary->next;
+    }
+}
+
 char *getAttributeValueBySelector(section *sections, const char *selectorToFind, const char *attributeToFind) {
     int sectionsLength = getListLength<section>(sections);
     for (int i = sectionsLength - 1; i >= 0; i--) {
@@ -550,25 +599,25 @@ block *addBlock(block *blocks) {
 }
 
 section *addSection(block *blocks, section *sections) {
-    block *lastBLock;
-    lastBLock = getLast<block>(blocks);
+    block *lastBlock;
+    lastBlock = getLast<block>(blocks);
     if (sections == nullptr) {
         sections = createSectionNode();
 
-        sections = createSection(lastBLock, sections);
+        sections = createSection(lastBlock, sections);
     }
     else {
-        if (lastBLock->takenSections < SECTIONS_PER_BLOCK) {
+        if (lastBlock->takenSections < SECTIONS_PER_BLOCK) {
             section *newSection;
             newSection = createSectionNode();
             sections = addLast<section>(sections, newSection);
 
-            sections = createSection(lastBLock, sections);
+            sections = createSection(lastBlock, sections);
         }
         else {
             addBlock(blocks);
             block *newBlock;
-            newBlock = lastBLock->next;
+            newBlock = lastBlock->next;
 
             section *newSection;
             newSection = createSectionNode();
@@ -705,6 +754,18 @@ attribute *removeAttributeNode(section *section, attribute *attributeToDelete) {
     memset(attributeToDelete->attributeValue, '\0', INPUT_SIZE);
     attributeToDelete->prev->next = attributeToDelete->next;
     return section->attributeList;
+}
+
+block *removeBlockNode(block *blocks, block *blockToDelete) {
+    if (blockToDelete == nullptr)
+        return blocks;
+    if (blockToDelete->next != nullptr)
+        blockToDelete->next->prev = blockToDelete->prev;
+    if (blockToDelete->prev == nullptr) {
+        return blockToDelete->next;
+    }
+    blockToDelete->prev->next = blockToDelete->next;
+    return blocks;
 }
 
 block *removeLastBlockNode(block *blocks) {

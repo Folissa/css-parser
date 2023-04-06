@@ -42,7 +42,7 @@ typedef struct attribute attribute;
 
 typedef struct block {
     section *sectionArray[SECTIONS_PER_BLOCK] = {};
-    int takenSections = 0;
+    unsigned int takenSections = 0;
     block *prev = nullptr;
     block *next = nullptr;
 } block;
@@ -116,6 +116,21 @@ char *getAttributeValueBySelector(section *sections, const char *selectorToFind,
 // LIST RELATED METHODS
 
 //
+template <typename type> void printList(type *firstNode);
+
+//
+void printBlocks(block *blocks);
+
+//
+void printSections(section *sections);
+
+//
+void printSelectors(selector *selectors);
+
+//
+void printAttributes(attribute *attributes);
+
+//
 attribute *getAttribute(section *searchedSection, const char *attributeToFind);
 
 //
@@ -165,6 +180,9 @@ section *removeSectionNode(section *sections, section *sectionToDelete);
 
 //
 attribute *removeAttributeNode(section *section, attribute *attributeToDelete);
+
+//
+block *removeBlockNode(block *blocks, block *blockToDelete);
 
 //
 block *removeLastBlockNode(block *blocks);
